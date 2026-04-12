@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="supabase-url" content="https://pqdfqgzungrximqwwnkc.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxZGZxZ3p1bmdyeGltcXd3bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTc3MzUsImV4cCI6MjA5MDc5MzczNX0.NExYpCx6C22svhtali8oGT1cfwTpF3lObJPrk3wvUHE" />
+  <title>Get a Quote – SKAY Custom Printing</title>
+  <meta name="description" content="Request a free quote for custom printing, merchandise, corporate gifts and more from SKAY." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div id="announcement-bar">
+  🎉 Limited Time! Up to <strong>40% OFF</strong> | Code: <span class="code">SKAY40</span>
+  <button class="announcement-close">✕</button>
+</div>
+
+<header id="site-header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text">SK<span>AY</span></span></a>
+    <nav class="main-nav"><ul>
+      <li><a href="index.html">Home</a></li><li><a href="services.html">Products</a></li>
+      <li><a href="about.html">About</a></li><li><a href="gallery.html">Gallery</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="quote.html" class="btn btn--primary btn--sm active">Get Quote</a></li>
+    </ul></nav>
+    <div class="header-actions">
+      <a href="wishlist.html" class="header-icon-btn">♡</a>
+      <button id="cart-btn" class="header-icon-btn">🛒<span class="cart-badge" style="display:none">0</span></button>
+      <button class="nav-toggle"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<nav class="mobile-nav">
+  <button class="mobile-nav-close" style="align-self:flex-end;font-size:1.5rem;padding:.5rem">✕</button>
+  <a href="index.html">Home</a><a href="services.html">Products</a><a href="about.html">About</a>
+  <a href="gallery.html">Gallery</a><a href="contact.html">Contact</a>
+  <a href="quote.html" style="color:var(--clr-orange-500);font-weight:700">Get Quote →</a>
+</nav>
+<div id="cart-overlay" class="cart-overlay"></div>
+<aside id="cart-sidebar" class="cart-sidebar">
+  <div class="cart-header"><h3>🛒 Your Cart</h3><button id="cart-close" class="header-icon-btn">✕</button></div>
+  <div id="cart-body" class="cart-body"></div>
+  <div class="cart-footer"><div class="cart-total"><span>Total</span><span id="cart-total">₹0</span></div>
+  <a href="quote.html" class="btn btn--primary">Proceed to Quote →</a></div>
+</aside>
+
+<!-- Hero -->
+<section style="background:linear-gradient(135deg,#fff7ed,#fff);padding:3rem 0 2rem">
+  <div class="container text-center">
+    <h1 class="section-title">Request a Free Quote</h1>
+    <div class="divider divider--center"></div>
+    <p class="section-subtitle">Tell us about your project and we'll get back with pricing within 24 hours</p>
+  </div>
+</section>
+
+<!-- Quote Form -->
+<section class="section">
+  <div class="container">
+    <div class="quote-form-wrap">
+      <!-- Perks -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem">
+        <div style="text-align:center;padding:1.25rem;background:var(--clr-orange-50);border-radius:1rem">
+          <div style="font-size:1.75rem">⚡</div>
+          <div style="font-weight:600;font-size:.875rem;margin-top:.5rem">24hr Response</div>
+        </div>
+        <div style="text-align:center;padding:1.25rem;background:var(--clr-orange-50);border-radius:1rem">
+          <div style="font-size:1.75rem">💰</div>
+          <div style="font-weight:600;font-size:.875rem;margin-top:.5rem">Best Prices</div>
+        </div>
+        <div style="text-align:center;padding:1.25rem;background:var(--clr-orange-50);border-radius:1rem">
+          <div style="font-size:1.75rem">🚚</div>
+          <div style="font-weight:600;font-size:.875rem;margin-top:.5rem">Pan-India Delivery</div>
+        </div>
+      </div>
+
+      <div class="quote-form-card">
+        <div id="quote-alert"></div>
+        <div id="quote-success" style="display:none;text-align:center;padding:3rem 1rem">
+          <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
+          <h2 style="font-size:1.75rem;margin-bottom:.75rem">Quote Submitted!</h2>
+          <p style="color:var(--clr-gray-600);margin-bottom:1.5rem">Our team will contact you within 24 hours with detailed pricing.</p>
+          <a href="index.html" class="btn btn--primary">Back to Home →</a>
+        </div>
+
+        <form id="quote-form">
+          <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--clr-gray-100)">
+            📋 Your Details
+          </h3>
+          <div class="quote-step-grid">
+            <div class="form-group">
+              <label class="form-label" for="q-name">Full Name *</label>
+              <input id="q-name" class="form-control" type="text" placeholder="Your full name" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="q-email">Email *</label>
+              <input id="q-email" class="form-control" type="email" placeholder="your@email.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="q-phone">Phone *</label>
+              <input id="q-phone" class="form-control" type="tel" placeholder="+91 98765 43210" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="q-company">Company / Organisation</label>
+              <input id="q-company" class="form-control" type="text" placeholder="Company name (optional)" />
+            </div>
+          </div>
+
+          <h3 style="font-size:1.25rem;font-weight:700;margin:1.75rem 0 1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--clr-gray-100)">
+            🎨 Project Details
+          </h3>
+          <div class="quote-step-grid">
+            <div class="form-group">
+              <label class="form-label" for="q-product">Product Type *</label>
+              <select id="q-product" class="form-control" required>
+                <option value="">Select product…</option>
+                <option>Custom T-Shirts</option>
+                <option>Custom Hoodies</option>
+                <option>Embroidered Caps</option>
+                <option>Custom Mugs (Ceramic)</option>
+                <option>Magic Color-Changing Mugs</option>
+                <option>Vinyl Stickers</option>
+                <option>Corporate Gift Sets</option>
+                <option>School Uniforms</option>
+                <option>Business Cards / Brochures</option>
+                <option>Other / Custom</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="q-qty">Quantity *</label>
+              <select id="q-qty" class="form-control" required>
+                <option value="">Select range…</option>
+                <option>1–10 pieces</option>
+                <option>11–50 pieces</option>
+                <option>51–100 pieces</option>
+                <option>101–500 pieces</option>
+                <option>500+ pieces</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="q-print">Print Method</label>
+              <select id="q-print" class="form-control">
+                <option value="">Not sure / Advise me</option>
+                <option>Screen Printing</option>
+                <option>DTF (Direct to Film)</option>
+                <option>Sublimation</option>
+                <option>Embroidery</option>
+                <option>UV Printing</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="q-deadline">Deadline</label>
+              <input id="q-deadline" class="form-control" type="date" />
+            </div>
+            <div class="form-group span-2">
+              <label class="form-label" for="q-desc">Project Description *</label>
+              <textarea id="q-desc" class="form-control" rows="4"
+                placeholder="Describe your design, colours, sizes, any special requirements…" required></textarea>
+            </div>
+            <div class="form-group span-2">
+              <label class="form-label" for="q-budget">Budget Range</label>
+              <select id="q-budget" class="form-control">
+                <option value="">Prefer not to say</option>
+                <option>Under ₹5,000</option>
+                <option>₹5,000 – ₹20,000</option>
+                <option>₹20,000 – ₹50,000</option>
+                <option>₹50,000 – ₹1,00,000</option>
+                <option>₹1,00,000+</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" id="quote-submit" class="btn btn--primary btn--lg" style="width:100%;justify-content:center;margin-top:1.5rem">
+            Submit Quote Request →
+          </button>
+          <p style="text-align:center;font-size:.8rem;color:var(--clr-gray-500);margin-top:.75rem">
+            We respond within 24 hours · No spam · Free consultation
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer id="site-footer">
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <a href="index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text">SK<span>AY</span></span></a>
+      <p>Premium printing & custom gifting solutions.</p>
+      <div class="footer-social"><a href="#">📷</a><a href="#">📘</a><a href="#">💬</a></div>
+    </div>
+    <div class="footer-col"><h4>Quick Links</h4><ul>
+      <li><a href="index.html">Home</a></li><li><a href="services.html">Products</a></li>
+      <li><a href="about.html">About</a></li><li><a href="contact.html">Contact</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Contact</h4>
+      <div class="footer-contact-item"><i>📍</i><span>Hyderabad, India</span></div>
+      <div class="footer-contact-item"><i>📧</i><span>hello@skay.in</span></div>
+    </div>
+  </div>
+  <div class="container footer-bottom"><span>© 2025 SKAY. All rights reserved.</span></div>
+</footer>
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script><script src="js/shop.js"></script>
+<script src="js/auth.js"></script><script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>

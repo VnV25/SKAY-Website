@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="supabase-url" content="https://pqdfqgzungrximqwwnkc.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxZGZxZ3p1bmdyeGltcXd3bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTc3MzUsImV4cCI6MjA5MDc5MzczNX0.NExYpCx6C22svhtali8oGT1cfwTpF3lObJPrk3wvUHE" />
+  <title>My Wishlist – SKAY</title>
+  <meta name="description" content="View and manage your saved products on SKAY." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div id="announcement-bar">
+  🎉 Limited Time! Up to <strong>40% OFF</strong> | Code: <span class="code">SKAY40</span>
+  <button class="announcement-close">✕</button>
+</div>
+
+<header id="site-header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text">SK<span>AY</span></span></a>
+    <nav class="main-nav"><ul>
+      <li><a href="index.html">Home</a></li><li><a href="services.html">Products</a></li>
+      <li><a href="about.html">About</a></li><li><a href="gallery.html">Gallery</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="quote.html" class="btn btn--primary btn--sm">Get Quote</a></li>
+    </ul></nav>
+    <div class="header-actions">
+      <a href="wishlist.html" class="header-icon-btn" style="color:var(--clr-orange-500)">❤️</a>
+      <button id="cart-btn" class="header-icon-btn">🛒<span class="cart-badge" style="display:none">0</span></button>
+      <button class="nav-toggle"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<nav class="mobile-nav">
+  <button class="mobile-nav-close" style="align-self:flex-end;font-size:1.5rem;padding:.5rem">✕</button>
+  <a href="index.html">Home</a><a href="services.html">Products</a><a href="about.html">About</a>
+  <a href="gallery.html">Gallery</a><a href="contact.html">Contact</a>
+  <a href="quote.html" style="color:var(--clr-orange-500);font-weight:700">Get Quote →</a>
+</nav>
+<div id="cart-overlay" class="cart-overlay"></div>
+<aside id="cart-sidebar" class="cart-sidebar">
+  <div class="cart-header"><h3>🛒 Your Cart</h3><button id="cart-close" class="header-icon-btn">✕</button></div>
+  <div id="cart-body" class="cart-body"></div>
+  <div class="cart-footer"><div class="cart-total"><span>Total</span><span id="cart-total">₹0</span></div>
+    <a href="quote.html" class="btn btn--primary">Proceed to Quote →</a></div>
+</aside>
+
+<!-- Hero -->
+<section style="background:linear-gradient(135deg,#fff7ed,#fff);padding:3rem 0 2rem">
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h1 class="section-title">❤️ My Wishlist</h1>
+        <p class="section-subtitle" style="margin-top:.5rem" id="wish-count">Loading…</p>
+      </div>
+      <button id="clear-wish-btn" class="btn btn--outline btn--sm" style="display:none">Clear All</button>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div id="wishlist-grid" class="wishlist-grid">
+      <!-- Populated by JS -->
+    </div>
+    <div id="wishlist-empty" class="wishlist-empty" style="display:none">
+      <div style="font-size:4rem;margin-bottom:1rem">💔</div>
+      <h2>Your wishlist is empty</h2>
+      <p>Browse our products and save your favourites!</p>
+      <a href="services.html" class="btn btn--primary" style="margin-top:1.5rem">Browse Products →</a>
+    </div>
+  </div>
+</section>
+
+<!-- Quick View Modal -->
+<div id="quick-view-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('quick-view-modal')">✕</button>
+    <div class="product-modal-grid">
+      <div class="product-modal-gallery"><img id="modal-img" src="" alt="Product" /></div>
+      <div class="product-modal-info">
+        <div id="modal-category" class="product-card__category"></div>
+        <h2 id="modal-name"></h2>
+        <div class="product-modal-price-row">
+          <span id="modal-price" class="product-modal-price"></span>
+          <span id="modal-original" class="product-modal-original"></span>
+        </div>
+        <p id="modal-desc" class="product-modal-desc"></p>
+        <div id="modal-stock" style="font-size:.85rem;color:var(--clr-gray-500);margin-bottom:1rem"></div>
+        <div id="modal-sizes"></div>
+        <div id="modal-colors"></div>
+        <div class="qty-row">
+          <span style="font-size:.875rem;font-weight:600">Quantity</span>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(-1)">−</button>
+            <input id="modal-qty" type="number" class="qty-input" value="1" min="1" />
+            <button class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="modal-add-btn" class="btn btn--primary">🛒 Add to Cart</button>
+          <a href="quote.html" class="btn btn--outline">Get Custom Quote</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer">
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <a href="index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text">SK<span>AY</span></span></a>
+      <p>Premium printing & custom gifting solutions.</p>
+    </div>
+    <div class="footer-col"><h4>Quick Links</h4><ul>
+      <li><a href="index.html">Home</a></li><li><a href="services.html">Products</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul></div>
+  </div>
+  <div class="container footer-bottom"><span>© 2025 SKAY. All rights reserved.</span></div>
+</footer>
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script><script src="js/shop.js"></script>
+<script src="js/auth.js"></script><script src="js/products.js"></script><script src="js/main.js"></script>
+<script>
+(async () => {
+  // Load all products to sync wishlist state
+  await window.ProductsModule.loadProducts({ limit: 100 });
+  renderWishlist();
+
+  window.Wishlist.onChange(renderWishlist);
+
+  document.getElementById('clear-wish-btn')?.addEventListener('click', () => {
+    if (confirm('Clear all wishlist items?')) {
+      window.Wishlist.get().forEach(p => window.Wishlist.remove(p.id));
+    }
+  });
+})();
+
+function renderWishlist() {
+  const items  = window.Wishlist.get();
+  const grid   = document.getElementById('wishlist-grid');
+  const empty  = document.getElementById('wishlist-empty');
+  const count  = document.getElementById('wish-count');
+  const clrBtn = document.getElementById('clear-wish-btn');
+
+  if (!items.length) {
+    grid.innerHTML = '';
+    if (empty)  empty.style.display  = 'block';
+    if (count)  count.textContent    = '0 saved items';
+    if (clrBtn) clrBtn.style.display = 'none';
+    return;
+  }
+  if (empty)  empty.style.display  = 'none';
+  if (count)  count.textContent    = `${items.length} saved item${items.length > 1 ? 's' : ''}`;
+  if (clrBtn) clrBtn.style.display = '';
+
+  grid.innerHTML = items.map(p => window.ProductsModule.buildProductCard(p)).join('');
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>

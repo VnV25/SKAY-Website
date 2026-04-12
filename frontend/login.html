@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login / Sign Up – SKAY</title>
+  <meta name="description" content="Login or create an account on SKAY" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+  <style>
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+    }
+    .auth-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #1a1a1a;
+    }
+    .auth-header p {
+      font-size: 0.875rem;
+      color: #666;
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #e5e5e5;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #999;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .auth-tab.active {
+      color: #f97316;
+      border-bottom-color: #f97316;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+      transition: border-color 0.3s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: #f97316;
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+    }
+    .btn {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn--primary {
+      background: #f97316;
+      color: white;
+    }
+    .btn--primary:hover:not(:disabled) {
+      background: #ea580c;
+    }
+    .btn--primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn--google {
+      background: #f5f5f5;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border: 1px solid #ddd;
+      margin-bottom: 1rem;
+    }
+    .btn--google:hover {
+      background: #eee;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      color: #999;
+      font-size: 0.875rem;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #ddd;
+    }
+    .alert {
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    .alert--error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fbb;
+    }
+    .alert--success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #bfb;
+    }
+    .form-link {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: #666;
+    }
+    .form-link a {
+      color: #f97316;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .form-link a:hover {
+      text-decoration: underline;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div style="width: 3rem; height: 3rem; background: #f97316; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.25rem; font-weight: 700; margin: 0 auto 1rem;">SK</div>
+      <h1>Welcome to SKAY</h1>
+      <p>Login or create your account</p>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Login Tab -->
+    <div id="login-tab" class="tab-content active">
+      <form id="login-form">
+        <button type="button" class="btn--google" onclick="loginWithGoogle()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1"></circle>
+            <path d="M12 1v6m0 6v6"></path>
+            <path d="M4.22 4.22l4.24 4.24m6.08 0l4.24-4.24"></path>
+            <path d="M1 12h6m6 0h6"></path>
+            <path d="M4.22 19.78l4.24-4.24m6.08 0l4.24 4.24"></path>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="divider">Or with email</div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input id="login-email" class="form-control" type="email" placeholder="you@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input id="login-password" class="form-control" type="password" placeholder="••••••••" required />
+        </div>
+
+        <button type="submit" class="btn btn--primary">Sign In</button>
+
+        <div class="form-link">
+          <a href="#forgot-password">Forgot your password?</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Sign Up Tab -->
+    <div id="signup-tab" class="tab-content">
+      <form id="signup-form">
+        <button type="button" class="btn--google" onclick="signupWithGoogle()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1"></circle>
+            <path d="M12 1v6m0 6v6"></path>
+            <path d="M4.22 4.22l4.24 4.24m6.08 0l4.24-4.24"></path>
+            <path d="M1 12h6m6 0h6"></path>
+            <path d="M4.22 19.78l4.24-4.24m6.08 0l4.24 4.24"></path>
+          </svg>
+          Sign up with Google
+        </button>
+
+        <div class="divider">Or create account</div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-name">Full Name</label>
+          <input id="signup-name" class="form-control" type="text" placeholder="John Doe" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-email">Email Address</label>
+          <input id="signup-email" class="form-control" type="email" placeholder="you@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-password">Password</label>
+          <input id="signup-password" class="form-control" type="password" placeholder="••••••••" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-confirm">Confirm Password</label>
+          <input id="signup-confirm" class="form-control" type="password" placeholder="••••••••" required />
+        </div>
+
+        <button type="submit" class="btn btn--primary">Create Account</button>
+      </form>
+    </div>
+
+    <div class="form-link" style="margin-top: 1.5rem;">
+      <a href="index.html">← Back to SKAY</a>
+    </div>
+  </div>
+</div>
+
+<!-- Google Sign-In Script -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+// Initialize Google Sign-In
+window.onload = function() {
+  google.accounts.id.initialize({
+    client_id: 'YOUR_GOOGLE_CLIENT_ID', // Replace with your Google Client ID
+    callback: handleGoogleSignIn,
+  });
+};
+
+function switchTab(tab) {
+  // Hide all tabs
+  document.getElementById('login-tab').classList.remove('active');
+  document.getElementById('signup-tab').classList.remove('active');
+  
+  // Remove active class from all buttons
+  document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  document.getElementById(tab + '-tab').classList.add('active');
+  event.target.classList.add('active');
+  
+  // Clear alert
+  document.getElementById('alert-container').innerHTML = '';
+}
+
+function showAlert(message, type = 'error') {
+  const alert = document.getElementById('alert-container');
+  alert.innerHTML = `<div class="alert alert--${type}">✕ ${message}</div>`;
+}
+
+// Login Form Handler
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = e.target.querySelector('button[type="submit"]');
+  
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+  
+  try {
+    const response = await fetch('/api/auth/customer/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+    
+    // Store token and user info
+    localStorage.setItem('skay-token', data.token);
+    localStorage.setItem('skay-user', JSON.stringify(data.user));
+    localStorage.setItem('skay-role', 'user');
+    
+    // Show success message
+    showAlert('Login successful! Redirecting...', 'success');
+    
+    // Redirect to homepage or dashboard
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1500);
+  } catch (err) {
+    showAlert(err.message);
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+});
+
+// Sign Up Form Handler
+document.getElementById('signup-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm').value;
+  const btn = e.target.querySelector('button[type="submit"]');
+  
+  if (password !== confirm) {
+    showAlert('Passwords do not match');
+    return;
+  }
+  
+  if (password.length < 6) {
+    showAlert('Password must be at least 6 characters');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Creating account...';
+  
+  try {
+    const response = await fetch('/api/auth/customer/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Registration failed');
+    }
+    
+    // Store token and user info
+    localStorage.setItem('skay-token', data.token);
+    localStorage.setItem('skay-user', JSON.stringify(data.user));
+    localStorage.setItem('skay-role', 'user');
+    
+    // Show success message
+    showAlert('Account created! Redirecting...', 'success');
+    
+    // Redirect to homepage
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1500);
+  } catch (err) {
+    showAlert(err.message);
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+});
+
+function loginWithGoogle() {
+  google.accounts.id.renderButton(
+    document.querySelector('.auth-card'),
+    { theme: 'outline', size: 'large', width: '300' }
+  );
+  // Alternative: Use One Tap Sign-In
+  google.accounts.id.prompt();
+}
+
+function signupWithGoogle() {
+  google.accounts.id.renderButton(
+    document.querySelector('.auth-card'),
+    { theme: 'outline', size: 'large', width: '300' }
+  );
+  google.accounts.id.prompt();
+}
+
+async function handleGoogleSignIn(response) {
+  try {
+    // Decode JWT token
+    const base64Url = response.credential.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    const googleUser = JSON.parse(jsonPayload);
+    
+    // Sync with backend
+    const res = await fetch('/api/auth/customer/google-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        googleId: googleUser.sub,
+        email: googleUser.email,
+        name: googleUser.name,
+        picture: googleUser.picture
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.message || 'Google sign-in failed');
+    }
+    
+    // Store token and user info
+    localStorage.setItem('skay-token', data.token);
+    localStorage.setItem('skay-user', JSON.stringify(data.user));
+    localStorage.setItem('skay-role', 'user');
+    
+    // Redirect to homepage
+    window.location.href = 'index.html';
+  } catch (err) {
+    showAlert(err.message);
+  }
+}
+</script>
+</body>
+</html>

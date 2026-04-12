@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login – SKAY</title>
+  <meta name="description" content="SKAY admin panel login" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pages.css" />
+</head>
+<body>
+<div class="admin-login-page">
+  <div class="admin-login-card">
+    <div class="admin-login-logo">
+      <div class="logo-mark" style="margin:0 auto 1rem;width:3rem;height:3rem;font-size:1rem">SK</div>
+      <h1>Admin Login</h1>
+      <p class="subtitle">Sign in to the SKAY admin panel</p>
+    </div>
+    <div id="login-alert"></div>
+    <form class="admin-login-form" id="login-form">
+      <div class="form-group">
+        <label class="form-label" for="admin-username">Username</label>
+        <input id="admin-username" class="form-control" type="text" placeholder="Enter your username" value="admin" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="admin-password">Password</label>
+        <input id="admin-password" class="form-control" type="password" placeholder="········" value="AdminSKAY@2024" required />
+      </div>
+      <button type="submit" id="login-btn" class="btn btn--primary">Sign In →</button>
+    </form>
+    <p style="text-align:center;font-size:.75rem;color:var(--clr-gray-400);margin-top:1.5rem">
+      Default credentials: admin / AdminSKAY@2024
+    </p>
+    <div style="text-align:center;margin-top:1rem">
+      <a href="../index.html" style="font-size:.875rem;color:var(--clr-orange-500)">← Back to site</a>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script>
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('login-btn');
+  const alert = document.getElementById('login-alert');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  alert.innerHTML = '';
+
+  try {
+    const username = document.getElementById('admin-username').value.trim();
+    const password = document.getElementById('admin-password').value;
+
+    const response = await fetch('/api/auth/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+
+    // Store token and admin info in localStorage
+    localStorage.setItem('skay-admin-token', data.token);
+    localStorage.setItem('skay-admin', JSON.stringify(data.admin));
+    localStorage.setItem('skay-role', 'admin');
+
+    // Redirect to dashboard
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    alert.innerHTML = `<div class="alert alert--error" style="margin-bottom:1rem">✕ ${err.message}</div>`;
+    btn.disabled = false;
+    btn.textContent = 'Sign In →';
+  }
+});
+</script>
+</body>
+</html>

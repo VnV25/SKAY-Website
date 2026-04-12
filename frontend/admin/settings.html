@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings – SKAY Admin</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+</head>
+<body data-page="settings">
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-logo">
+      <a href="../index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text" style="color:white">SK<span>AY</span></span></a>
+    </div>
+    <nav>
+      <a href="dashboard.html" class="admin-nav-link">📊 Dashboard</a>
+      <a href="products.html"  class="admin-nav-link">📦 Products</a>
+      <a href="settings.html"  class="admin-nav-link active">⚙️ Settings</a>
+      <a href="../index.html"  class="admin-nav-link">🌐 View Site</a>
+    </nav>
+    <div style="padding:1rem;border-top:1px solid var(--clr-gray-800)">
+      <button class="logout-btn admin-nav-link" style="width:100%;text-align:left;cursor:pointer">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h1>⚙️ Site Settings</h1>
+    </div>
+    <div class="admin-content">
+      <form id="settings-form">
+        <div style="display:grid;gap:1.5rem;max-width:720px">
+
+          <!-- Announcement Bar -->
+          <div style="background:white;border-radius:1rem;padding:1.5rem;box-shadow:var(--shadow-md)">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem">📢 Announcement Bar</h3>
+            <div class="form-group" style="margin-bottom:1rem">
+              <label class="form-label">Announcement Text</label>
+              <input name="announcement-text" class="form-control" type="text"
+                placeholder="🎉 Limited Time Offer! Get up to 40% OFF | Code: SKAY40" />
+            </div>
+            <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
+              <input name="announcement-enabled" type="checkbox" style="width:1.125rem;height:1.125rem;accent-color:var(--clr-orange-500)">
+              <span style="font-size:.875rem;font-weight:500">Enable announcement bar</span>
+            </label>
+          </div>
+
+          <!-- Feature Toggles -->
+          <div style="background:white;border-radius:1rem;padding:1.5rem;box-shadow:var(--shadow-md)">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem">🔧 Feature Toggles</h3>
+            <div style="display:grid;gap:.875rem">
+              <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.75rem;border-radius:.5rem;border:1px solid var(--clr-gray-100)">
+                <div>
+                  <div style="font-weight:600;font-size:.875rem">🔥 Trending Products</div>
+                  <div style="font-size:.75rem;color:var(--clr-gray-500)">Show trending section on homepage</div>
+                </div>
+                <input name="show-trending" type="checkbox" style="width:1.125rem;height:1.125rem;accent-color:var(--clr-orange-500)">
+              </label>
+              <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.75rem;border-radius:.5rem;border:1px solid var(--clr-gray-100)">
+                <div>
+                  <div style="font-weight:600;font-size:.875rem">♡ Wishlist</div>
+                  <div style="font-size:.75rem;color:var(--clr-gray-500)">Allow users to save products to wishlist</div>
+                </div>
+                <input name="show-wishlist" type="checkbox" style="width:1.125rem;height:1.125rem;accent-color:var(--clr-orange-500)">
+              </label>
+              <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.75rem;border-radius:.5rem;border:1px solid var(--clr-gray-100)">
+                <div>
+                  <div style="font-weight:600;font-size:.875rem">🛒 Shopping Cart</div>
+                  <div style="font-size:.75rem;color:var(--clr-gray-500)">Show cart button in header</div>
+                </div>
+                <input name="show-cart" type="checkbox" style="width:1.125rem;height:1.125rem;accent-color:var(--clr-orange-500)">
+              </label>
+            </div>
+          </div>
+
+          <!-- Supabase Config -->
+          <div style="background:white;border-radius:1rem;padding:1.5rem;box-shadow:var(--shadow-md)">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:.5rem">🔑 Supabase Configuration</h3>
+            <p style="font-size:.8rem;color:var(--clr-gray-500);margin-bottom:1.25rem">
+              Update your Supabase project URL and keys. These are stored in the HTML meta tags.
+              Edit them directly in each HTML file's <code>&lt;head&gt;</code>.
+            </p>
+            <div class="alert alert--info">
+              Update <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> in the
+              <code>&lt;meta&gt;</code> tags at the top of each HTML page.
+              The service role key should only be in <code>backend/.env</code>.
+            </div>
+          </div>
+
+          <!-- Backend Config -->
+          <div style="background:white;border-radius:1rem;padding:1.5rem;box-shadow:var(--shadow-md)">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:.5rem">🗄️ Backend / Database</h3>
+            <p style="font-size:.8rem;color:var(--clr-gray-500);margin-bottom:1.25rem">Backend status check:</p>
+            <div id="backend-status" class="alert alert--info">Checking backend connection…</div>
+            <button type="button" onclick="checkBackend()" class="btn btn--outline btn--sm" style="margin-top:1rem">
+              🔄 Recheck Connection
+            </button>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--lg" style="justify-content:center">
+            💾 Save Settings
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="../js/shop.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/admin.js"></script>
+<script>
+async function checkBackend() {
+  const el = document.getElementById('backend-status');
+  el.className = 'alert alert--info';
+  el.textContent = 'Checking…';
+  try {
+    await window.API.request('/health');
+    el.className = 'alert alert--success';
+    el.textContent = '✓ Backend is online and MongoDB connected.';
+  } catch {
+    el.className = 'alert alert--error';
+    el.textContent = '✕ Backend offline. Start with: cd backend && node server.js';
+  }
+}
+checkBackend();
+</script>
+</body>
+</html>

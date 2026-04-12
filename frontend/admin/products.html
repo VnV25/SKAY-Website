@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Products – SKAY Admin</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+</head>
+<body data-page="products">
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-logo">
+      <a href="../index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text" style="color:white">SK<span>AY</span></span></a>
+    </div>
+    <nav>
+      <a href="dashboard.html" class="admin-nav-link">📊 Dashboard</a>
+      <a href="products.html"  class="admin-nav-link active">📦 Products</a>
+      <a href="settings.html"  class="admin-nav-link">⚙️ Settings</a>
+      <a href="../index.html"  class="admin-nav-link">🌐 View Site</a>
+    </nav>
+    <div style="padding:1rem;border-top:1px solid var(--clr-gray-800)">
+      <button class="logout-btn admin-nav-link" style="width:100%;text-align:left;cursor:pointer">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h1>📦 Products</h1>
+      <button id="add-product-btn" class="btn btn--primary">+ Add Product</button>
+    </div>
+    <div class="admin-content">
+
+      <!-- Search -->
+      <div style="margin-bottom:1.5rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+        <div class="search-bar" style="max-width:320px;flex:1">
+          <span>🔍</span>
+          <input id="product-search" type="text" placeholder="Search products…" />
+        </div>
+        <span id="product-total-count" style="font-size:.875rem;color:var(--clr-gray-500)"></span>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <div class="table-overflow">
+          <table class="data-table">
+            <thead><tr>
+              <th>Image</th><th>Name</th><th>Category</th>
+              <th>Price</th><th>Stock</th><th>Trending</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="products-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--clr-gray-400)">Loading products…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Add/Edit Modal -->
+<div id="product-modal" class="modal-overlay hidden">
+  <div class="modal modal--md">
+    <button class="modal-close" onclick="closeProductModal()">✕</button>
+    <div style="padding:1.5rem">
+      <h2 id="modal-form-title" style="font-size:1.25rem;font-weight:700;margin-bottom:1.5rem">Add New Product</h2>
+      <form id="product-form">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Product Name *</label>
+            <input name="name" class="form-control" type="text" placeholder="e.g., Custom Oversized T-Shirt" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select name="category" class="form-control" required>
+              <option value="">Select…</option>
+              <option value="t-shirts">T-Shirts</option>
+              <option value="hoodies">Hoodies</option>
+              <option value="caps">Caps</option>
+              <option value="mugs">Mugs</option>
+              <option value="stickers">Stickers</option>
+              <option value="custom">Custom / Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock *</label>
+            <input name="stock" class="form-control" type="number" min="0" placeholder="50" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price (₹) *</label>
+            <input name="price" class="form-control" type="number" min="0" placeholder="699" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Original Price (₹)</label>
+            <input name="originalPrice" class="form-control" type="number" min="0" placeholder="999 (optional)" />
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Image URL</label>
+            <input name="image" class="form-control" type="url" placeholder="https://images.unsplash.com/…" />
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Available Sizes</label>
+            <input name="sizes" class="form-control" type="text" placeholder="S, M, L, XL, XXL (comma-separated)" />
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Product description…"></textarea>
+          </div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+              <input name="trending" type="checkbox" style="width:1rem;height:1rem;accent-color:var(--clr-orange-500)" />
+              <span class="form-label" style="margin:0">Mark as Trending 🔥</span>
+            </label>
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;margin-top:1.5rem">
+          <button type="submit" class="btn btn--primary" style="flex:1;justify-content:center">Save Product</button>
+          <button type="button" class="btn btn--outline" onclick="closeProductModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="../js/shop.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/products.js"></script>
+<script src="../js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="supabase-url" content="https://pqdfqgzungrximqwwnkc.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxZGZxZ3p1bmdyeGltcXd3bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTc3MzUsImV4cCI6MjA5MDc5MzczNX0.NExYpCx6C22svhtali8oGT1cfwTpF3lObJPrk3wvUHE" />
+  <title>Gallery – SKAY Work Showcase</title>
+  <meta name="description" content="Browse SKAY's portfolio of custom printed t-shirts, mugs, hoodies, embroidery and corporate gifts." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div id="announcement-bar">
+  🎉 Limited Time! Up to <strong>40% OFF</strong> | Code: <span class="code">SKAY40</span>
+  <button class="announcement-close">✕</button>
+</div>
+
+<header id="site-header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text">SK<span>AY</span></span></a>
+    <nav class="main-nav"><ul>
+      <li><a href="index.html">Home</a></li><li><a href="services.html">Products</a></li>
+      <li><a href="about.html">About</a></li><li><a href="gallery.html" class="active">Gallery</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="quote.html" class="btn btn--primary btn--sm">Get Quote</a></li>
+    </ul></nav>
+    <div class="header-actions">
+      <a href="wishlist.html" class="header-icon-btn">♡</a>
+      <button id="cart-btn" class="header-icon-btn">🛒<span class="cart-badge" style="display:none">0</span></button>
+      <button class="nav-toggle"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<nav class="mobile-nav">
+  <button class="mobile-nav-close" style="align-self:flex-end;font-size:1.5rem;padding:.5rem">✕</button>
+  <a href="index.html">Home</a><a href="services.html">Products</a><a href="about.html">About</a>
+  <a href="gallery.html">Gallery</a><a href="contact.html">Contact</a>
+  <a href="quote.html" style="color:var(--clr-orange-500);font-weight:700">Get Quote →</a>
+</nav>
+<div id="cart-overlay" class="cart-overlay"></div>
+<aside id="cart-sidebar" class="cart-sidebar">
+  <div class="cart-header"><h3>🛒 Your Cart</h3><button id="cart-close" class="header-icon-btn">✕</button></div>
+  <div id="cart-body" class="cart-body"></div>
+  <div class="cart-footer"><div class="cart-total"><span>Total</span><span id="cart-total">₹0</span></div>
+    <a href="quote.html" class="btn btn--primary">Proceed to Quote →</a></div>
+</aside>
+
+<!-- Hero -->
+<section style="background:linear-gradient(135deg,#fff7ed,#fff);padding:3rem 0 2rem">
+  <div class="container text-center">
+    <h1 class="section-title">Our Work Gallery</h1>
+    <div class="divider divider--center"></div>
+    <p class="section-subtitle">A showcase of our premium custom printing & merchandise projects</p>
+  </div>
+</section>
+
+<!-- Gallery Filters -->
+<section class="section">
+  <div class="container">
+    <div class="category-filters" style="justify-content:center;margin-bottom:2rem">
+      <button class="filter-btn active" onclick="filterGallery('all',this)">All Work</button>
+      <button class="filter-btn" onclick="filterGallery('apparel',this)">Apparel</button>
+      <button class="filter-btn" onclick="filterGallery('mugs',this)">Mugs & Drinkware</button>
+      <button class="filter-btn" onclick="filterGallery('corporate',this)">Corporate</button>
+      <button class="filter-btn" onclick="filterGallery('events',this)">Events</button>
+    </div>
+
+    <div id="gallery-grid" class="gallery-grid">
+      <div class="gallery-item reveal" data-cat="apparel">
+        <img src="https://images.unsplash.com/photo-1577876050215-134d70691e0c?w=500" alt="Custom T-Shirts" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Custom T-Shirts · Bulk Order</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="mugs">
+        <img src="https://images.unsplash.com/photo-1539042357369-956fb344118f?w=500" alt="Custom Mugs" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Magic Mugs · Corporate Gift</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="apparel">
+        <img src="https://images.unsplash.com/photo-1705105385841-accda1f8259d?w=500" alt="Embroidery Hoodie" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Embroidered Hoodies</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="corporate">
+        <img src="https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=500" alt="Corporate Gift Set" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Premium Corporate Gift Sets</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="apparel">
+        <img src="https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=500" alt="Custom Cap" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Embroidered Caps · Team Wear</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="events">
+        <img src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500" alt="Event Uniforms" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">School Uniforms · 500pcs Order</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="mugs">
+        <img src="https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500" alt="Ceramic Mug" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Sublimation Ceramic Mugs</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="corporate">
+        <img src="https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=500" alt="Brochure Printing" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Brochure & Marketing Print</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="apparel">
+        <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=500" alt="Polo Shirts" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Polo Shirts · Company Uniforms</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="events">
+        <img src="https://images.unsplash.com/photo-1572375992501-4b0892d50c69?w=500" alt="Stickers" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Custom Vinyl Stickers · Event Branding</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="corporate">
+        <img src="https://images.unsplash.com/photo-1599658880436-c61792e70672?w=500" alt="Office Gifts" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">Office Merchandise Kit</span></div>
+      </div>
+      <div class="gallery-item reveal" data-cat="apparel">
+        <img src="https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500" alt="DTF Print" loading="lazy" />
+        <div class="gallery-item-overlay"><span class="gallery-item-label">DTF Full-Colour Print · T-Shirts</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Love What You See?</h2>
+    <p>Let us create something amazing for your brand or event.</p>
+    <div class="cta-btns">
+      <a href="quote.html" class="btn btn--white btn--lg">Get a Free Quote →</a>
+    </div>
+  </div>
+</section>
+
+<footer id="site-footer">
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <a href="index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text">SK<span>AY</span></span></a>
+      <p>Premium printing & custom gifting solutions.</p>
+      <div class="footer-social"><a href="#">📷</a><a href="#">📘</a><a href="#">💬</a></div>
+    </div>
+    <div class="footer-col"><h4>Quick Links</h4><ul>
+      <li><a href="index.html">Home</a></li><li><a href="services.html">Products</a></li>
+      <li><a href="about.html">About</a></li><li><a href="contact.html">Contact</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Contact</h4>
+      <div class="footer-contact-item"><i>📍</i><span>Hyderabad, India</span></div>
+      <div class="footer-contact-item"><i>📧</i><span>hello@skay.in</span></div>
+    </div>
+  </div>
+  <div class="container footer-bottom"><span>© 2025 SKAY. All rights reserved.</span><a href="admin/login.html">Admin</a></div>
+</footer>
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script><script src="js/shop.js"></script>
+<script src="js/auth.js"></script><script src="js/main.js"></script>
+<script>
+function filterGallery(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.gallery-item').forEach(item => {
+    item.style.display = (cat === 'all' || item.dataset.cat === cat) ? '' : 'none';
+  });
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>
