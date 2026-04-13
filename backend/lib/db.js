@@ -16,10 +16,11 @@ async function createProfile(userId, { email, full_name, avatar_url = null, phon
   
   const { data, error } = await supabase
     .from('profiles')
-    .insert([insertData])
-    .select();
+    .upsert([insertData], { onConflict: 'id' })
+    .select()
+    .single();
   if (error) throw error;
-  return data[0];
+  return data;
 }
 
 async function getProfileById(userId) {
@@ -63,20 +64,23 @@ async function updateProfile(userId, updates) {
 }
 
 async function incrementLoginCount(userId) {
-  // Try to increment login count - ignore errors if columns don't exist
   try {
+    const profile = await getProfileById(userId);
+    if (!profile) return null;
+
+    const nextLoginCount = (profile.login_count || 0) + 1;
     const { data, error } = await supabase
       .from('profiles')
       .update({ 
-        login_count: (await supabase.from('profiles').select('login_count').eq('id', userId).single()).data?.login_count + 1 || 1,
+        login_count: nextLoginCount,
         last_login: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
       .select()
       .single();
-    
+
     if (error) {
-      // Silently ignore if columns don't exist
       if (error.message.includes('does not exist') || error.message.includes('schema cache')) {
         return null;
       }

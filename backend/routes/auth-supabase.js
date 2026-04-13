@@ -6,6 +6,17 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
+function redactAuthBody(body) {
+  if (!body || typeof body !== 'object') return body;
+  const redacted = { ...body };
+  if (redacted.password) redacted.password = '[redacted]';
+  return redacted;
+}
+
+function getStrongPasswordMessage() {
+  return 'Password must be at least 8 characters and include uppercase, lowercase, a number, and a symbol.';
+}
+
 // ════════════════════════════════════════════════════════
 // 🔐 CUSTOMER AUTHENTICATION
 // ════════════════════════════════════════════════════════
@@ -13,13 +24,22 @@ const router = express.Router();
 // ── Customer Register ──────────────────────────────────────
 router.post('/customer/register', [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('password')
-    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  // Accept either 'name' or 'full_name'
-  body(['name', 'full_name']).if(() => false).trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('password').custom((value) => {
+    if (
+      typeof value !== 'string' ||
+      value.length < 8 ||
+      !/[a-z]/.test(value) ||
+      !/[A-Z]/.test(value) ||
+      !/[0-9]/.test(value) ||
+      !/[^A-Za-z0-9]/.test(value)
+    ) {
+      throw new Error(getStrongPasswordMessage());
+    }
+    return true;
+  }),
 ], async (req, res) => {
   try {
-    console.log('[Auth] customer register body:', req.body);
+    console.log('[Auth] customer register body:', redactAuthBody(req.body));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log('Validation errors:', errors.array());
@@ -47,7 +67,9 @@ router.post('/customer/register', [
       console.error('[Auth] customer register Supabase signUp error:', authError);
       const statusCode = authError.status || 400;
       return res.status(statusCode).json({
-        message: authError.message || 'Account creation failed',
+        message: authError.code === 'weak_password'
+          ? getStrongPasswordMessage()
+          : authError.message || 'Account creation failed',
         code: authError.code,
         status: authError.status,
       });
@@ -59,25 +81,11 @@ router.post('/customer/register', [
     }
 
     // Create or update profile in database
-    try {
-      await db.createProfile(authData.user.id, {
-        email,
-        full_name: finalName,
-      });
-      console.log('[Auth] Profile created for user:', authData.user.id);
-    } catch (profileError) {
-      const profileErrorMessage = String(profileError?.message || profileError);
-      console.error('[Auth] Profile creation error details:', profileError);
-      if (profileErrorMessage.includes('duplicate key') || profileErrorMessage.includes('already exists')) {
-        console.log('[Auth] Duplicate profile detected; updating existing profile for user:', authData.user.id);
-        await db.updateProfile(authData.user.id, {
-          email,
-          full_name: finalName,
-        });
-      } else {
-        throw profileError;
-      }
-    }
+    await db.createProfile(authData.user.id, {
+      email,
+      full_name: finalName,
+    });
+    console.log('[Auth] Profile upserted for user:', authData.user.id);
 
     // Sign in the user immediately and return a token for frontend
     const { data: loginData, error: loginError } = await supabaseAuth.auth.signInWithPassword({
@@ -139,7 +147,13 @@ router.post('/customer/login', [
     await db.incrementLoginCount(data.user.id);
 
     // Get complete profile
-    const profile = await db.getProfileById(data.user.id);
+    let profile = await db.getProfileById(data.user.id);
+    if (!profile) {
+      profile = await db.createProfile(data.user.id, {
+        email: data.user.email,
+        full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email,
+      });
+    }
 
     res.json({
       token: data.session.access_token,
@@ -211,7 +225,7 @@ router.post('/admin/login', [
   body('password').exists().withMessage('Password required'),
 ], async (req, res) => {
   try {
-    console.log('[Auth/Admin] login body:', req.body);
+    console.log('[Auth/Admin] login body:', redactAuthBody(req.body));
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 

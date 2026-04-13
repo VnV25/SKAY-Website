@@ -1,9 +1,10 @@
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Mail, Lock, User } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { api } from '../api/api';
+import { CustomerUser, useAuth } from '../context/AuthContext';
 
 export function CustomerAuth() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
@@ -12,32 +13,18 @@ export function CustomerAuth() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const { setCustomerSession } = useAuth();
 
   const getCustomerName = (user: any, fallback?: string) => {
     return user?.name || user?.full_name || fallback || user?.email || 'Customer';
   };
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('customerUser');
-    if (storedUser) {
-      return;
-    }
-
-    // Check if Supabase session is present for Google sign-in or web auth flows
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      // Session check
-    }).catch(() => {
-      // Ignore auth errors
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, _session) => {
-        // Listen to auth changes
-      }
-    );
-
-    return () => subscription?.unsubscribe();
-  }, []);
+  const isStrongPassword = (password: string) =>
+    password.length >= 8 &&
+    /[a-z]/.test(password) &&
+    /[A-Z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password);
 
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,13 +38,13 @@ export function CustomerAuth() {
       });
 
       if (data?.token) {
-        localStorage.setItem('customerToken', data.token);
-        localStorage.setItem('customerUser', JSON.stringify({
+        const customerUser: CustomerUser = {
           id: data.user.id,
           email: data.user.email,
           name: getCustomerName(data.user, data.user.email),
-          loginTime: new Date().toISOString(),
-        }));
+          provider: 'password',
+        };
+        setCustomerSession(customerUser, data.token);
         window.location.href = '/';
       } else {
         throw new Error(data.message || 'Login failed');
@@ -80,8 +67,8 @@ export function CustomerAuth() {
       return;
     }
 
-    if (signupData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!isStrongPassword(signupData.password)) {
+      setError('Password must be at least 8 characters and include uppercase, lowercase, a number, and a symbol');
       setLoading(false);
       return;
     }
@@ -94,13 +81,13 @@ export function CustomerAuth() {
       });
 
       if (data?.token) {
-        localStorage.setItem('customerToken', data.token);
-        localStorage.setItem('customerUser', JSON.stringify({
+        const customerUser: CustomerUser = {
           id: data.user.id,
           email: data.user.email,
           name: getCustomerName(data.user, signupData.name),
-          loginTime: new Date().toISOString(),
-        }));
+          provider: 'password',
+        };
+        setCustomerSession(customerUser, data.token);
 
         setSubmitted(true);
         setTimeout(() => {
@@ -334,7 +321,7 @@ export function CustomerAuth() {
                       value={signupData.password}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSignupData({ ...signupData, password: e.target.value })}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="At least 6 characters"
+                      placeholder="8+ chars, upper/lower, number, symbol"
                       required
                     />
                   </div>

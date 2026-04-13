@@ -67,7 +67,7 @@ export function AdminProducts() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header mode="admin" />
 
       {/* Header */}
       <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8">

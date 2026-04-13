@@ -3,9 +3,11 @@ import { Footer } from '../components/Footer';
 import { Lock, User } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useAuth } from '../context/AuthContext';
 
 export function AdminLogin() {
   const navigate = useNavigate();
+  const { setAdminSession } = useAuth();
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',
@@ -39,9 +41,7 @@ export function AdminLogin() {
 
       // Store admin token
       if (data.token) {
-        localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('adminUser', JSON.stringify(data.admin));
-        localStorage.setItem('isAdminLoggedIn', 'true');
+        setAdminSession(data.admin, data.token);
         
         // Redirect to dashboard
         setTimeout(() => {
@@ -57,7 +57,7 @@ export function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <Header mode="admin" />
 
       <section className="py-16 md:py-24 min-h-[60vh] flex items-center">
         <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 w-full">
