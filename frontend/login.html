@@ -324,7 +324,11 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       throw new Error(data.message || 'Login failed');
     }
     
-    // Store token and user info
+    // ── Clear ANY previous session (admin or customer) ──
+    ['skay-admin-token','skay-admin','skay-role','skay-admin-session',
+     'skay-token','skay-user'].forEach(k => localStorage.removeItem(k));
+    
+    // Store new session
     localStorage.setItem('skay-token', data.token);
     localStorage.setItem('skay-user', JSON.stringify(data.user));
     localStorage.setItem('skay-role', 'user');
@@ -379,7 +383,11 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
       throw new Error(data.message || 'Registration failed');
     }
     
-    // Store token and user info
+    // ── Clear ANY previous session before storing new one ──
+    ['skay-admin-token','skay-admin','skay-role','skay-admin-session',
+     'skay-token','skay-user'].forEach(k => localStorage.removeItem(k));
+
+    // Store new session
     localStorage.setItem('skay-token', data.token);
     localStorage.setItem('skay-user', JSON.stringify(data.user));
     localStorage.setItem('skay-role', 'user');

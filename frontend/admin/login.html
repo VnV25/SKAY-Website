@@ -26,12 +26,12 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="admin-password">Password</label>
-        <input id="admin-password" class="form-control" type="password" placeholder="········" value="AdminSKAY@2024" required />
+        <input id="admin-password" class="form-control" type="password" placeholder="········" required />
       </div>
       <button type="submit" id="login-btn" class="btn btn--primary">Sign In →</button>
     </form>
     <p style="text-align:center;font-size:.75rem;color:var(--clr-gray-400);margin-top:1.5rem">
-      Default credentials: admin / AdminSKAY@2024
+      Default credentials: <strong>admin@skay.in</strong> / AdminSKAY@2024
     </p>
     <div style="text-align:center;margin-top:1rem">
       <a href="../index.html" style="font-size:.875rem;color:var(--clr-orange-500)">← Back to site</a>
@@ -65,7 +65,11 @@ document.getElementById('login-form').addEventListener('submit', async function(
       throw new Error(data.message || 'Login failed');
     }
 
-    // Store token and admin info in localStorage
+    // Clear ANY previous session (customer or other admin)
+    ['skay-admin-token','skay-admin','skay-role','skay-admin-session',
+     'skay-token','skay-user'].forEach(k => localStorage.removeItem(k));
+
+    // Store admin session
     localStorage.setItem('skay-admin-token', data.token);
     localStorage.setItem('skay-admin', JSON.stringify(data.admin));
     localStorage.setItem('skay-role', 'admin');

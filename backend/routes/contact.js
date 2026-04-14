@@ -78,7 +78,7 @@ router.get('/', requireAdmin, async (req, res) => {
 router.put('/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    if (!['new', 'in-progress', 'completed', 'resolved'].includes(status)) {
+    if (!['new', 'pending', 'in-progress', 'completed', 'resolved'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
 

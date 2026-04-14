@@ -243,22 +243,41 @@ router.get('/customers', async (req, res) => {
 // ── PUT /api/admin/contact/:id ──────────────────────────────
 router.put('/contact/:id', async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, notes } = req.body;
     
     const updates = {};
     if (status) updates.status = status;
-
-    const contact = await db.updateContact(req.params.id, updates);
-    if (!contact) return res.status(404).json({ message: 'Contact not found' });
+    if (notes !== undefined) updates.notes = notes;
     
-    res.json(contact);
+    // Only add updated_at if we have updates
+    if (Object.keys(updates).length > 0) {
+      updates.updated_at = new Date().toISOString();
+    }
+
+    console.log(`[Admin] Updating contact ${req.params.id} with:`, updates);
+
+    const { data, error } = await supabase
+      .from('contacts')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select();
+    
+    if (error) {
+      console.error('[Admin] update contact error:', error);
+      return res.status(400).json({ message: 'Failed to update contact', error: error.message });
+    }
+    
+    if (!data || data.length === 0) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+    
+    console.log(`[Admin] Updated contact ${req.params.id}`);
+    res.json({ success: true, contact: data[0] });
   } catch (err) {
     console.error('[Admin] update contact error:', err.message);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-
-// ── GET /api/admin/dashboard ──────────────────────────────
 router.get('/dashboard', async (req, res) => {
   try {
     // Get stats
@@ -315,6 +334,195 @@ router.get('/dashboard', async (req, res) => {
   } catch (err) {
     console.error('[Admin] dashboard error:', err.message);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+// ── PUT /api/admin/order/:id ──────────────────────────────
+router.put('/order/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required' });
+    }
+
+    const updates = { 
+      status,
+      updated_at: new Date().toISOString()
+    };
+
+    console.log(`[Admin] Updating order ${req.params.id} to status: ${status}`);
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select();
+    
+    if (error) {
+      console.error('[Admin] update order error:', error);
+      return res.status(400).json({ message: 'Failed to update order', error: error.message });
+    }
+    
+    if (!data || data.length === 0) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    console.log(`[Admin] Updated order ${req.params.id} to ${status}`);
+    res.json({ success: true, order: data[0] });
+  } catch (err) {
+    console.error('[Admin] update order error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── GET /api/admin/assets ──────────────────────────────────
+router.get('/assets', async (req, res) => {
+  try {
+    const { type, category, page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = supabase
+      .from('assets')
+      .select('*', { count: 'exact' })
+      .range(offset, offset + parseInt(limit) - 1)
+      .order('created_at', { ascending: false });
+
+    if (type) query = query.eq('type', type);
+    if (category) query = query.eq('category', category);
+
+    const { data: assets, count, error } = await query;
+
+    if (error) {
+      console.error('[Admin] get assets error:', error);
+      return res.status(400).json({ message: 'Failed to fetch assets', error: error.message });
+    }
+
+    res.json({
+      assets: assets || [],
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count || 0,
+        pages: Math.ceil((count || 0) / parseInt(limit)),
+      },
+    });
+  } catch (err) {
+    console.error('[Admin] get assets error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── POST /api/admin/assets ──────────────────────────────────
+// Receives JSON with file data (should be uploaded separately to Supabase Storage)
+router.post('/assets', async (req, res) => {
+  try {
+    const { name, type, category, file_url, file_path, file_size, mime_type } = req.body;
+
+    if (!name || !type || !file_url || !file_path) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: name, type, file_url, file_path' 
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('assets')
+      .insert([{
+        name,
+        type,
+        category: category || null,
+        file_url,
+        file_path,
+        file_size: file_size || null,
+        mime_type: mime_type || null,
+        uploaded_by: req.user.id,
+      }])
+      .select();
+
+    if (error) {
+      console.error('[Admin] create asset error:', error);
+      return res.status(400).json({ message: 'Failed to create asset', error: error.message });
+    }
+
+    res.json({ success: true, asset: data[0] });
+  } catch (err) {
+    console.error('[Admin] create asset error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── DELETE /api/admin/assets/:id ──────────────────────────────
+router.delete('/assets/:id', async (req, res) => {
+  try {
+    // Get the asset to get the file_path
+    const { data: asset, error: fetchError } = await supabase
+      .from('assets')
+      .select('file_path')
+      .eq('id', req.params.id)
+      .single();
+
+    if (fetchError || !asset) {
+      return res.status(404).json({ message: 'Asset not found' });
+    }
+
+    // Delete from storage
+    const { error: storageError } = await supabase.storage
+      .from('assets')
+      .remove([asset.file_path]);
+
+    if (storageError) {
+      console.error('[Admin] delete from storage error:', storageError);
+      // Continue anyway - the asset record might still need to be deleted
+    }
+
+    // Delete from database
+    const { error: deleteError } = await supabase
+      .from('assets')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (deleteError) {
+      console.error('[Admin] delete asset error:', deleteError);
+      return res.status(400).json({ message: 'Failed to delete asset', error: deleteError.message });
+    }
+
+    res.json({ success: true, message: 'Asset deleted successfully' });
+  } catch (err) {
+    console.error('[Admin] delete asset error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ── PUT /api/admin/assets/:id ──────────────────────────────
+router.put('/assets/:id', async (req, res) => {
+  try {
+    const { name, category } = req.body;
+
+    const updates = {};
+    if (name) updates.name = name;
+    if (category) updates.category = category;
+    updates.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('assets')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select();
+
+    if (error) {
+      console.error('[Admin] update asset error:', error);
+      return res.status(400).json({ message: 'Failed to update asset', error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ message: 'Asset not found' });
+    }
+
+    res.json({ success: true, asset: data[0] });
+  } catch (err) {
+    console.error('[Admin] update asset error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

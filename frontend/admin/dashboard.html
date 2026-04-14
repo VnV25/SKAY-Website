@@ -3,47 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="supabase-url" content="https://pqdfqgzungrximqwwnkc.supabase.co" />
+  <!-- Supabase config for Auth -->
+  <meta name="supabase-url"      content="https://pqdfqgzungrximqwwnkc.supabase.co" />
   <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxZGZxZ3p1bmdyeGltcXd3bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTc3MzUsImV4cCI6MjA5MDc5MzczNX0.NExYpCx6C22svhtali8oGT1cfwTpF3lObJPrk3wvUHE" />
   <title>Dashboard – SKAY Admin</title>
+  <meta name="description" content="SKAY Admin Dashboard – manage orders, customers and inquiries" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='900' font-family='Inter,sans-serif'>S</text></svg>">
   <link rel="stylesheet" href="../css/main.css" />
   <link rel="stylesheet" href="../css/components.css" />
+  <style>
+    /* ── inline admin badge colour for inquiries ─────────── */
+    .badge--purple { background:#f3e8ff; color:#7e22ce; }
+    .status-select {
+      padding:.25rem .5rem;
+      border:1px solid var(--clr-gray-300);
+      border-radius:var(--radius-sm);
+      font-size:.8rem;
+      font-weight:600;
+      cursor:pointer;
+      background:#fff;
+      color:var(--clr-gray-800);
+      transition:border-color .2s;
+    }
+    .status-select:focus { outline:none; border-color:var(--clr-orange-500); }
+    .tab-btn { transition:all .25s; }
+    .tab-btn.active {
+      color:var(--clr-orange-500) !important;
+      border-bottom:2px solid var(--clr-orange-500) !important;
+    }
+  </style>
 </head>
+<!-- Supabase CDN must load BEFORE auth.js -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <body data-page="dashboard">
 <div class="admin-layout">
 
-  <!-- Sidebar -->
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
   <aside class="admin-sidebar">
     <div class="admin-sidebar-logo">
-      <a href="../index.html" class="logo"><div class="logo-mark">SK</div><span class="logo-text" style="color:white">SK<span>AY</span></span></a>
+      <a href="../index.html" class="logo">
+        <div class="logo-mark">SK</div>
+        <span class="logo-text" style="color:white">SK<span>AY</span></span>
+      </a>
       <div style="font-size:.7rem;color:var(--clr-gray-500);margin-top:.25rem;margin-left:.25rem">Admin Panel</div>
     </div>
     <nav>
-      <a href="dashboard.html" class="admin-nav-link active">📊 Dashboard</a>
+      <a href="dashboard.html" id="nav-dashboard" class="admin-nav-link active"
+         onclick="showTab('dashboard');setActiveNav('nav-dashboard')">📊 Dashboard</a>
       <a href="products.html"  class="admin-nav-link">📦 Products</a>
-      <a href="dashboard.html" class="admin-nav-link" onclick="showTab('customers'); return false;">👥 Customers</a>
+      <a href="#" id="nav-customers" class="admin-nav-link"
+         onclick="showTab('customers');setActiveNav('nav-customers');return false">👥 Customers</a>
+      <a href="#" id="nav-inquiries" class="admin-nav-link"
+         onclick="showTab('inquiries');setActiveNav('nav-inquiries');return false">📩 Inquiries</a>
       <a href="settings.html"  class="admin-nav-link">⚙️ Settings</a>
       <a href="../index.html"  class="admin-nav-link">🌐 View Site</a>
     </nav>
     <div style="padding:1rem;border-top:1px solid var(--clr-gray-800)">
-      <button class="logout-btn admin-nav-link" style="width:100%;text-align:left;cursor:pointer">🚪 Logout</button>
+      <button class="logout-btn admin-nav-link" style="width:100%;text-align:left;background:none;border:none;cursor:pointer">🚪 Logout</button>
     </div>
   </aside>
 
-  <!-- Main -->
+  <!-- ── Main content ────────────────────────────────────── -->
   <div class="admin-main">
     <div class="admin-topbar">
-      <h1>📊 Dashboard</h1>
+      <h1 id="page-title">📊 Dashboard</h1>
       <div style="display:flex;align-items:center;gap:1rem">
         <span id="admin-username" style="font-size:.875rem;color:var(--clr-gray-500)"></span>
         <a href="../index.html" class="btn btn--outline btn--sm">View Site →</a>
       </div>
     </div>
+
     <div class="admin-content">
 
-      <!-- Stats grid -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2rem">
+      <!-- ── Stats Grid (always visible) ──────────────────── -->
+      <div id="stats-grid"
+           style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2rem">
         <div class="stat-card">
           <div class="stat-icon stat-icon--blue">👥</div>
           <div><div class="stat-value" id="stat-users">—</div><div class="stat-label">Total Users</div></div>
@@ -57,103 +91,171 @@
           <div><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Total Orders</div></div>
         </div>
         <div class="stat-card">
+          <div class="stat-icon stat-icon--green">📩</div>
+          <div><div class="stat-value" id="stat-contacts">—</div><div class="stat-label">Inquiries</div></div>
+        </div>
+      </div>
+
+      <!-- ── Revenue + Quick Actions ──────────────────────── -->
+      <div id="quick-actions"
+           style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;margin-bottom:2rem">
+        <div class="stat-card" style="flex-direction:row;align-items:center;gap:1rem">
           <div class="stat-icon stat-icon--green">💰</div>
           <div><div class="stat-value" id="stat-revenue">—</div><div class="stat-label">Revenue</div></div>
         </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem">
-        <div style="background:linear-gradient(135deg,var(--clr-orange-500),var(--clr-orange-700));border-radius:1rem;padding:1.5rem;color:white">
-          <h3 style="font-size:1.125rem;margin-bottom:.5rem">🔥 Quick Add Product</h3>
-          <p style="font-size:.875rem;opacity:.85;margin-bottom:1rem">Add a new product to your catalogue instantly.</p>
-          <a href="products.html" class="btn btn--white btn--sm">Add Product →</a>
+        <div style="background:linear-gradient(135deg,var(--clr-orange-500),var(--clr-orange-700));
+                    border-radius:1rem;padding:1.25rem 1.5rem;color:white">
+          <h3 style="font-size:1rem;margin-bottom:.35rem">🔥 Add Product</h3>
+          <a href="products.html" class="btn btn--white btn--sm">Open →</a>
         </div>
-        <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);border-radius:1rem;padding:1.5rem;color:white">
-          <h3 style="font-size:1.125rem;margin-bottom:.5rem">📋 Site Settings</h3>
-          <p style="font-size:.875rem;opacity:.85;margin-bottom:1rem">Update announcement bar, toggles and more.</p>
-          <a href="settings.html" class="btn btn--white btn--sm">Open Settings →</a>
+        <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);
+                    border-radius:1rem;padding:1.25rem 1.5rem;color:white">
+          <h3 style="font-size:1rem;margin-bottom:.35rem">⚙️ Site Settings</h3>
+          <a href="settings.html" class="btn btn--white btn--sm">Open →</a>
         </div>
       </div>
 
-      <!-- Tabs Navigation -->
-      <div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--clr-gray-100);margin-bottom:1.5rem">
-        <button id="tab-dashboard" class="tab-btn active" onclick="showTab('dashboard')" style="padding:0.75rem 1.5rem;border:none;background:none;cursor:pointer;font-weight:600;color:var(--clr-orange-500);border-bottom:2px solid var(--clr-orange-500);transition:all 0.3s">📊 Dashboard</button>
-        <button id="tab-customers" class="tab-btn" onclick="showTab('customers')" style="padding:0.75rem 1.5rem;border:none;background:none;cursor:pointer;font-weight:600;color:var(--clr-gray-400);border-bottom:2px solid transparent;transition:all 0.3s">👥 Customers</button>
+      <!-- ── Tabs Navigation ──────────────────────────────── -->
+      <div style="display:flex;gap:.25rem;border-bottom:1px solid var(--clr-gray-200);margin-bottom:1.5rem">
+        <button id="tab-dashboard"  class="tab-btn active"
+                style="padding:.75rem 1.5rem;border:none;background:none;cursor:pointer;font-weight:600;border-bottom:2px solid var(--clr-orange-500);color:var(--clr-orange-500)"
+                onclick="showTab('dashboard')">📊 Dashboard</button>
+        <button id="tab-customers"  class="tab-btn"
+                style="padding:.75rem 1.5rem;border:none;background:none;cursor:pointer;font-weight:600;border-bottom:2px solid transparent;color:var(--clr-gray-400)"
+                onclick="showTab('customers')">👥 Customers</button>
+        <button id="tab-inquiries"  class="tab-btn"
+                style="padding:.75rem 1.5rem;border:none;background:none;cursor:pointer;font-weight:600;border-bottom:2px solid transparent;color:var(--clr-gray-400)"
+                onclick="showTab('inquiries')">📩 Inquiries <span id="new-inquiries-badge" style="display:none;background:var(--clr-orange-500);color:white;border-radius:999px;padding:1px 7px;font-size:.7rem;margin-left:.25rem"></span></button>
       </div>
 
-      <!-- Dashboard Content -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- TAB: Dashboard (Orders) -->
+      <!-- ══════════════════════════════════════════════════ -->
       <div id="content-dashboard">
-        <!-- Recent Orders Table -->
-      <div class="table-wrap">
-        <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--clr-gray-100);display:flex;justify-content:space-between;align-items:center">
-          <h3 style="font-size:1rem;font-weight:700">📋 Recent Orders</h3>
-          <span style="font-size:.8rem;color:var(--clr-gray-400)" id="orders-status">Loading…</span>
+        <div class="table-wrap">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--clr-gray-100);
+                      display:flex;justify-content:space-between;align-items:center">
+            <h3 style="font-size:1rem;font-weight:700">📋 Recent Orders</h3>
+            <span style="font-size:.8rem;color:var(--clr-gray-400)" id="orders-status">Loading…</span>
+          </div>
+          <div class="table-overflow">
+            <table class="data-table">
+              <thead><tr>
+                <th>Order ID</th><th>Customer</th><th>Date</th>
+                <th>Amount</th><th>Status</th><th>Payment</th><th>Action</th>
+              </tr></thead>
+              <tbody id="orders-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--clr-gray-400)">Loading orders…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-overflow">
-          <table class="data-table">
-            <thead><tr>
-              <th>Order ID</th><th>Customer</th><th>Date</th>
-              <th>Amount</th><th>Status</th><th>Payment</th>
-            </tr></thead>
-            <tbody id="orders-tbody">
-              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--clr-gray-400)">Loading orders…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
       </div>
 
-      <!-- Customer Logins Content -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- TAB: Customers -->
+      <!-- ══════════════════════════════════════════════════ -->
       <div id="content-customers" style="display:none">
-      <!-- Customer Stats -->
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-bottom:1.5rem">
-        <div class="stat-card">
-          <div class="stat-icon stat-icon--blue">👥</div>
-          <div><div class="stat-value" id="stat-total-customers">—</div><div class="stat-label">Total Customers</div></div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-bottom:1.5rem">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--blue">👥</div>
+            <div><div class="stat-value" id="stat-total-customers">—</div><div class="stat-label">Total Customers</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--green">✓</div>
+            <div><div class="stat-value" id="stat-active-today">—</div><div class="stat-label">Active Today</div></div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon stat-icon--green">✓</div>
-          <div><div class="stat-value" id="stat-active-today">—</div><div class="stat-label">Active Today</div></div>
+        <div class="table-wrap">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--clr-gray-100);
+                      display:flex;justify-content:space-between;align-items:center">
+            <h3 style="font-size:1rem;font-weight:700">👥 Registered Customers</h3>
+            <span style="font-size:.8rem;color:var(--clr-gray-400)" id="customers-status">Loading…</span>
+          </div>
+          <div class="table-overflow">
+            <table class="data-table">
+              <thead><tr>
+                <th>Name</th><th>Email</th><th>Phone</th>
+                <th>Logins</th><th>Last Login</th><th>Joined</th><th>Status</th>
+              </tr></thead>
+              <tbody id="customers-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--clr-gray-400)">Loading customers…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Customer List Table -->
-      <div class="table-wrap">
-        <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--clr-gray-100);display:flex;justify-content:space-between;align-items:center">
-          <h3 style="font-size:1rem;font-weight:700">👥 Registered Customers</h3>
-          <span style="font-size:.8rem;color:var(--clr-gray-400)" id="customers-status">Loading…</span>
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- TAB: Inquiries (Customer Inquiries / Quotes)       -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div id="content-inquiries" style="display:none">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1.5rem">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--orange">🆕</div>
+            <div><div class="stat-value" id="stat-new-contacts">—</div><div class="stat-label">New</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--purple">⏳</div>
+            <div><div class="stat-value" id="stat-pending-contacts">—</div><div class="stat-label">Pending</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--green">✅</div>
+            <div><div class="stat-value" id="stat-resolved-contacts">—</div><div class="stat-label">Resolved</div></div>
+          </div>
         </div>
-        <div class="table-overflow">
-          <table class="data-table">
-            <thead><tr>
-              <th>Name</th><th>Email</th><th>Phone</th><th>Login Count</th><th>Last Login</th><th>Joined</th><th>Status</th>
-            </tr></thead>
-            <tbody id="customers-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--clr-gray-400)">Loading customers…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      </div>
 
-    </div>
-  </div>
-</div>
+        <!-- Filter bar -->
+        <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+          <label style="font-size:.875rem;font-weight:600;color:var(--clr-gray-600)">Filter by status:</label>
+          <select id="inquiry-filter" class="status-select" style="padding:.4rem .75rem"
+                  onchange="filterInquiries(this.value)">
+            <option value="">All</option>
+            <option value="new">New</option>
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="resolved">Resolved</option>
+          </select>
+          <button class="btn btn--outline btn--sm" onclick="loadInquiries()">↻ Refresh</button>
+          <span style="font-size:.8rem;color:var(--clr-gray-400)" id="inquiries-status">Loading…</span>
+        </div>
+
+        <div class="table-wrap">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--clr-gray-100)">
+            <h3 style="font-size:1rem;font-weight:700">📩 Customer Inquiries &amp; Quotes</h3>
+          </div>
+          <div class="table-overflow">
+            <table class="data-table">
+              <thead><tr>
+                <th>#</th><th>Name</th><th>Email</th><th>Message</th>
+                <th>Received</th><th>Status</th><th>Change Status</th>
+              </tr></thead>
+              <tbody id="inquiries-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--clr-gray-400)">Loading inquiries…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- END TAB: Inquiries -->
+
+    </div><!-- /.admin-content -->
+  </div><!-- /.admin-main -->
+</div><!-- /.admin-layout -->
+
 <div id="toast-container"></div>
 
-<div id="toast-container"></div>
+<!-- Scripts: Supabase is already loaded in <head> before body -->
 <script src="../js/api.js"></script>
-<script src="../js/shop.js"></script>
 <script src="../js/auth.js"></script>
 <script src="../js/admin.js"></script>
 <script>
-// Show admin name
-window.Auth.onChange(user => {
-  const el = document.getElementById('admin-username');
-  if (el && user) el.textContent = user.name || user.email || 'Admin';
-});
+  // Show admin name once auth is ready
+  window.Auth.onChange(user => {
+    const el = document.getElementById('admin-username');
+    if (el && user) el.textContent = user.full_name || user.email || 'Admin';
+  });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </body>
 </html>
