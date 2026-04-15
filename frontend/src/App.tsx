@@ -8,11 +8,11 @@ import { AuthProvider } from './context/AuthContext';
 function App() {
   return (
     <AdminProvider>
-      <ShopProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ShopProvider>
           <RouterProvider router={router} />
-        </AuthProvider>
-      </ShopProvider>
+        </ShopProvider>
+      </AuthProvider>
     </AdminProvider>
   );
 }

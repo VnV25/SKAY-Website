@@ -49,7 +49,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // ── POST /api/orders ──────────────────────────────────────
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const { items, total, shippingAddress, paymentMethod, orderNotes, guestName, guestEmail, guestPhone } = req.body;
 
@@ -61,10 +61,7 @@ router.post('/', async (req, res) => {
       status: 'pending',
     };
 
-    // Attach user if authenticated
-    if (req.user && req.user.id) {
-      orderData.user_id = req.user.id;
-    }
+    orderData.user_id = req.user.id;
 
     const { data: order, error } = await supabase
       .from('orders')

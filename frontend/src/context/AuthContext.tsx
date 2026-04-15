@@ -35,6 +35,18 @@ const ADMIN_STORAGE_KEY = 'adminUser';
 const ADMIN_TOKEN_KEY = 'adminToken';
 const ADMIN_FLAG_KEY = 'isAdminLoggedIn';
 
+function getStorage() {
+  return window.sessionStorage;
+}
+
+function clearLegacyStorage() {
+  window.localStorage.removeItem(CUSTOMER_STORAGE_KEY);
+  window.localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  window.localStorage.removeItem(ADMIN_STORAGE_KEY);
+  window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+  window.localStorage.removeItem(ADMIN_FLAG_KEY);
+}
+
 function normalizeCustomerName(user: Partial<CustomerUser> & Record<string, any>) {
   return (
     user?.name ||
@@ -59,7 +71,7 @@ function normalizeCustomerUser(user: Record<string, any> | null | undefined): Cu
 }
 
 function readJSON<T>(key: string): T | null {
-  const value = localStorage.getItem(key);
+  const value = getStorage().getItem(key) || window.localStorage.getItem(key);
   if (!value) return null;
 
   try {
@@ -70,26 +82,30 @@ function readJSON<T>(key: string): T | null {
 }
 
 function syncCustomerToStorage(user: CustomerUser | null, token?: string) {
+  const storage = getStorage();
   if (user) {
-    localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(user));
-    if (token) localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+    storage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(user));
+    if (token) storage.setItem(CUSTOMER_TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(CUSTOMER_STORAGE_KEY);
-    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    storage.removeItem(CUSTOMER_STORAGE_KEY);
+    storage.removeItem(CUSTOMER_TOKEN_KEY);
   }
+  clearLegacyStorage();
   window.dispatchEvent(new Event('customer-auth-changed'));
 }
 
 function syncAdminToStorage(user: AdminUser | null, token?: string) {
+  const storage = getStorage();
   if (user) {
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(user));
-    localStorage.setItem(ADMIN_FLAG_KEY, 'true');
-    if (token) localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    storage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(user));
+    storage.setItem(ADMIN_FLAG_KEY, 'true');
+    if (token) storage.setItem(ADMIN_TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-    localStorage.removeItem(ADMIN_FLAG_KEY);
+    storage.removeItem(ADMIN_STORAGE_KEY);
+    storage.removeItem(ADMIN_TOKEN_KEY);
+    storage.removeItem(ADMIN_FLAG_KEY);
   }
+  clearLegacyStorage();
   window.dispatchEvent(new Event('admin-auth-changed'));
 }
 
@@ -115,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    clearLegacyStorage();
 
     const hydrateFromSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -122,7 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextUser = sessionToCustomerUser(session);
       if (nextUser) {
         setCustomerUser(nextUser);
-        localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(nextUser));
+        getStorage().setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(nextUser));
+      } else {
+        syncCustomerToStorage(null);
       }
     };
 
@@ -132,7 +151,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextUser = sessionToCustomerUser(session);
       if (nextUser) {
         setCustomerUser(nextUser);
-        localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(nextUser));
+        getStorage().setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(nextUser));
+      } else {
+        setCustomerUser(null);
+        syncCustomerToStorage(null);
       }
     });
 

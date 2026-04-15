@@ -4,6 +4,7 @@ import { Lock, User } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api/api';
 
 export function AdminLogin() {
   const navigate = useNavigate();
@@ -21,23 +22,10 @@ export function AdminLogin() {
     setError('');
     
     try {
-      const response = await fetch('/api/auth/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: credentials.username,
-          password: credentials.password,
-        }),
+      const data = await api.auth.adminLogin({
+        username: credentials.username,
+        password: credentials.password,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Login failed');
-        setTimeout(() => setError(''), 3000);
-        setLoading(false);
-        return;
-      }
 
       // Store admin token
       if (data.token) {

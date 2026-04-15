@@ -1,7 +1,7 @@
 // Cart service for API calls
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-const getToken = () => localStorage.getItem('customerToken');
+const getToken = () => sessionStorage.getItem('customerToken') || localStorage.getItem('customerToken');
 
 export const cartService = {
   // Get user's cart

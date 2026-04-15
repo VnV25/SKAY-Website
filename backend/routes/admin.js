@@ -4,6 +4,11 @@ const db = require('../lib/db');
 const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+const CONTACT_STATUSES = ['new', 'pending', 'in-progress', 'completed'];
+
+function normalizeStatus(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
 
 // All admin routes require admin token
 router.use(requireAdmin);
@@ -17,16 +22,21 @@ router.get('/stats', async (req, res) => {
     const { count: totalUsers } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true });
+    const { count: totalCustomers } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'customer');
     
     console.log(`📊 Total registered profiles - Count: ${totalUsers}`);
 
     // Get profiles with logins
-    const { data: profilesWithLogins } = await supabase
+    const { count: profilesWithLogins } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'customer')
       .gt('login_count', 0);
     
-    console.log(`👥 Profiles with logins - Count: ${profilesWithLogins?.length || 0}`);
+    console.log(`👥 Profiles with logins - Count: ${profilesWithLogins || 0}`);
 
     // Get total products
     const { count: totalProducts } = await supabase
@@ -43,12 +53,12 @@ router.get('/stats', async (req, res) => {
     console.log(`🛒 Total orders - Count: ${totalOrders}`);
 
     // Get pending orders
-    const { data: pendingOrders } = await supabase
+    const { count: pendingOrders } = await supabase
       .from('orders')
-      .select('id')
-      .eq('status', 'pending');
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['pending', 'new']);
     
-    console.log(`⏳ Pending orders - Count: ${pendingOrders?.length || 0}`);
+    console.log(`⏳ Pending orders - Count: ${pendingOrders || 0}`);
 
     // Get total contacts/quotes
     const { count: totalContacts } = await supabase
@@ -58,12 +68,12 @@ router.get('/stats', async (req, res) => {
     console.log(`📧 Total contacts/quotes - Count: ${totalContacts}`);
 
     // Get new contacts
-    const { data: newContacts } = await supabase
+    const { count: newContacts } = await supabase
       .from('contacts')
-      .select('id')
-      .eq('status', 'new');
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['new', 'pending']);
     
-    console.log(`🆕 New contacts - Count: ${newContacts?.length || 0}`);
+    console.log(`🆕 New contacts - Count: ${newContacts || 0}`);
 
     // Get total revenue (sum of order totals)
     const { data: allOrders } = await supabase
@@ -76,13 +86,13 @@ router.get('/stats', async (req, res) => {
     console.log('\n📋 [Admin Stats Final] Complete\n');
 
     res.json({ 
-      totalUsers,
-      customersWithLogins: profilesWithLogins?.length || 0,
+      totalUsers: totalCustomers || 0,
+      customersWithLogins: profilesWithLogins || 0,
       totalProducts: totalProducts || 0,
-      totalOrders,
-      pendingOrders: pendingOrders?.length || 0,
+      totalOrders: totalOrders || 0,
+      pendingOrders: pendingOrders || 0,
       totalContacts: totalContacts || 0,
-      newContacts: newContacts?.length || 0,
+      newContacts: newContacts || 0,
       totalRevenue,
       lastUpdated: new Date().toISOString(),
     });
@@ -244,9 +254,15 @@ router.get('/customers', async (req, res) => {
 router.put('/contact/:id', async (req, res) => {
   try {
     const { status, notes } = req.body;
+    const normalizedStatus = normalizeStatus(status);
     
     const updates = {};
-    if (status) updates.status = status;
+    if (status !== undefined) {
+      if (!CONTACT_STATUSES.includes(normalizedStatus)) {
+        return res.status(400).json({ message: `Status must be one of: ${CONTACT_STATUSES.join(', ')}` });
+      }
+      updates.status = normalizedStatus;
+    }
     if (notes !== undefined) updates.notes = notes;
     
     // Only add updated_at if we have updates

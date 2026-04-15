@@ -3,10 +3,12 @@ import { Footer } from '../components/Footer';
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useAdmin } from '../context/AdminContext';
+import { useAuth } from '../context/AuthContext';
 import { Save, Plus, Trash2, Eye, EyeOff, Edit2 } from 'lucide-react';
 
 export function AdminSettings() {
   const navigate = useNavigate();
+  const { adminUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const { settings, testimonials, updateSettings, updateAnnouncement, addTestimonial, updateTestimonial, deleteTestimonial, toggleTestimonial } = useAdmin();
   const [saved, setSaved] = useState(false);
@@ -21,13 +23,13 @@ export function AdminSettings() {
   });
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isAdminLoggedIn');
-    if (!isLoggedIn) {
+    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    if (!adminUser || !adminToken) {
       navigate('/admin');
     } else {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }, [adminUser, navigate]);
 
   const handleToggle = (key: keyof typeof settings) => {
     updateSettings({ [key]: !settings[key] });

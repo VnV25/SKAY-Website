@@ -3,11 +3,12 @@ import { Footer } from '../components/Footer';
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Package, Users, Clock, TrendingUp, LogOut, FileText, Mail, Phone, Settings, BarChart3, UserCheck } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { api } from '../api/api';
+import { useAuth } from '../context/AuthContext';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
+  const { adminUser, clearAdminSession } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profiles' | 'inquiries'>('dashboard');
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -24,23 +25,18 @@ export function AdminDashboard() {
   });
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const isLoggedIn = localStorage.getItem('isAdminLoggedIn');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!isLoggedIn && !session) {
-        navigate('/admin');
-      } else {
-        setIsLoading(false);
-        // Load stats and initial data
-        loadStats();
-        loadProfiles();
-        loadInquiries();
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
+    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+
+    if (!adminUser || !adminToken) {
+      navigate('/admin');
+      return;
+    }
+
+    setIsLoading(false);
+    loadStats();
+    loadProfiles();
+    loadInquiries();
+  }, [adminUser, navigate]);
 
   const loadStats = async () => {
     try {
@@ -86,8 +82,7 @@ export function AdminDashboard() {
   };
 
   const handleLogout = async () => {
-    localStorage.removeItem('isAdminLoggedIn');
-    await supabase.auth.signOut();
+    clearAdminSession();
     navigate('/admin');
   };
 
@@ -100,7 +95,7 @@ export function AdminDashboard() {
   }
 
   const statsDisplay = [
-    { icon: Users, label: 'Total Registered', value: (stats.totalUsers || 0).toString(), color: 'blue' },
+    { icon: Users, label: 'Total Customers', value: (stats.totalUsers || 0).toString(), color: 'blue' },
     { icon: UserCheck, label: 'Customers Logged In', value: (stats.customersWithLogins || 0).toString(), color: 'green' },
     { icon: Package, label: 'Total Products', value: (stats.totalProducts || 0).toString(), color: 'orange' },
     { icon: TrendingUp, label: 'Total Orders', value: (stats.totalOrders || 0).toString(), color: 'purple' },

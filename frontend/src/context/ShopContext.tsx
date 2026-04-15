@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface Product {
   id: string;
@@ -44,33 +45,36 @@ interface ShopContextType {
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 export function ShopProvider({ children }: { children: ReactNode }) {
+  const { customerUser } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
+  const userStorageKey = customerUser?.id || 'guest';
+  const cartStorageKey = `skay-cart:${userStorageKey}`;
+  const wishlistStorageKey = `skay-wishlist:${userStorageKey}`;
+  const recentStorageKey = 'skay-recent';
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem('skay-cart');
-    const savedWishlist = localStorage.getItem('skay-wishlist');
-    const savedRecent = localStorage.getItem('skay-recent');
+    const savedCart = sessionStorage.getItem(cartStorageKey);
+    const savedWishlist = sessionStorage.getItem(wishlistStorageKey);
+    const savedRecent = sessionStorage.getItem(recentStorageKey);
     
-    if (savedCart) setCart(JSON.parse(savedCart));
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-    if (savedRecent) setRecentlyViewed(JSON.parse(savedRecent));
-  }, []);
-
-  // Save to localStorage when cart changes
-  useEffect(() => {
-    localStorage.setItem('skay-cart', JSON.stringify(cart));
-  }, [cart]);
+    setCart(savedCart ? JSON.parse(savedCart) : []);
+    setWishlist(savedWishlist ? JSON.parse(savedWishlist) : []);
+    setRecentlyViewed(savedRecent ? JSON.parse(savedRecent) : []);
+  }, [cartStorageKey, wishlistStorageKey, recentStorageKey]);
 
   useEffect(() => {
-    localStorage.setItem('skay-wishlist', JSON.stringify(wishlist));
-  }, [wishlist]);
+    sessionStorage.setItem(cartStorageKey, JSON.stringify(cart));
+  }, [cart, cartStorageKey]);
 
   useEffect(() => {
-    localStorage.setItem('skay-recent', JSON.stringify(recentlyViewed));
-  }, [recentlyViewed]);
+    sessionStorage.setItem(wishlistStorageKey, JSON.stringify(wishlist));
+  }, [wishlist, wishlistStorageKey]);
+
+  useEffect(() => {
+    sessionStorage.setItem(recentStorageKey, JSON.stringify(recentlyViewed));
+  }, [recentlyViewed, recentStorageKey]);
 
   const addToCart = (product: Product, quantity = 1, size?: string, color?: string, customDesign?: string) => {
     setCart(prev => {
@@ -132,11 +136,16 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      const response = await fetch('/api/orders', {
+      const token = sessionStorage.getItem('customerToken') || localStorage.getItem('customerToken');
+      if (!token) {
+        throw new Error('Please log in before placing an order.');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('customerToken') || ''}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(orderData),
       });

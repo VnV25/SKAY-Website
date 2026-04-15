@@ -3,11 +3,13 @@ import { Footer } from '../components/Footer';
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useAdmin } from '../context/AdminContext';
+import { useAuth } from '../context/AuthContext';
 import { Product } from '../context/ShopContext';
 import { Edit2, Trash2, Save, X, Plus, TrendingUp, Star } from 'lucide-react';
 
 export function AdminProducts() {
   const navigate = useNavigate();
+  const { adminUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const { products, updateProduct, deleteProduct, addProduct, resetProducts } = useAdmin();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -16,13 +18,13 @@ export function AdminProducts() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isAdminLoggedIn');
-    if (!isLoggedIn) {
+    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    if (!adminUser || !adminToken) {
       navigate('/admin');
     } else {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }, [adminUser, navigate]);
 
   const startEdit = (product: Product) => {
     setEditingId(product.id);

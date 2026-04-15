@@ -58,6 +58,7 @@ export function Header({ mode = 'public' }: HeaderProps) {
 
   const handleLogout = async () => {
     if (customerUser) {
+      sessionStorage.clear();
       localStorage.removeItem('skay-cart');
       localStorage.removeItem('skay-wishlist');
       localStorage.removeItem('skay-recent');
