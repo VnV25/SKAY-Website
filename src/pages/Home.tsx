@@ -1,28 +1,9 @@
 import { Link } from 'react-router';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import { CheckCircle, Clock, Users, Headphones, ArrowRight, TrendingUp } from 'lucide-react';
-import { ProductCard } from '../components/ProductCard';
-import { ProductModal } from '../components/ProductModal';
-import { useAdmin } from '../context/AdminContext';
-import { Product } from '../context/ShopContext';
-import { useState } from 'react';
-import { useShop } from '../context/ShopContext';
+import { CheckCircle, Clock, Users, Headphones, ArrowRight } from 'lucide-react';
 
 export function Home() {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const { recentlyViewed } = useShop();
-  const { products } = useAdmin();
-
-  const handleQuickView = (product: Product) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
-  };
-
-  const trendingProducts = products.filter(p => p.trending).slice(0, 4);
-  const recommendedProducts = products.slice(0, 4);
-
   const stats = [
     { icon: CheckCircle, value: '500+', label: 'Projects Completed' },
     { icon: Users, value: '500+', label: 'Happy Clients' },
@@ -34,32 +15,32 @@ export function Home() {
     {
       title: 'Custom T-Shirts',
       description: 'Oversized & Normal fit with premium printing',
-      image: '/assets/img433.jpg',
+      image: 'https://images.unsplash.com/photo-1577876050215-134d70691e0c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXN0b20lMjBwcmludGVkJTIwdHNoaXJ0cyUyMGFwcGFyZWx8ZW58MXx8fHwxNzcwNzQ3NjI3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     },
     {
       title: 'Custom Mugs',
       description: 'Coffee & Magic mugs with personalized designs',
-      image: '/assets/mug.jpg',
+      image: 'https://images.unsplash.com/photo-1539042357369-956fb344118f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcmludGVkJTIwY29mZmVlJTIwbXVncyUyMG1lcmNoYW5kaXNlfGVufDF8fHx8MTc3MDc0NzYyN3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     },
     {
       title: 'Hoodies & Embroidery',
       description: 'High-quality embroidery works on apparel',
-      image: '/assets/hoodie.jpg',
+      image: 'https://images.unsplash.com/photo-1705105385841-accda1f8259d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXN0b20lMjBlbWJyb2lkZXJ5JTIwaG9vZGllc3xlbnwxfHx8fDE3NzA3NDc2Mjh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     },
     {
       title: 'Corporate Gifting',
       description: 'Professional gift sets for businesses',
-      image: '/assets/company.jpg',
+      image: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=600',
     },
     {
       title: 'School Uniforms',
       description: 'Bulk orders for educational institutions',
-      image: '/assets/uniform.jpg',
+      image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600',
     },
     {
       title: 'Standard Printing',
       description: 'Documents, brochures & marketing materials',
-      image: '/assets/promotion.jpeg',
+      image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600',
     },
   ];
 
@@ -116,12 +97,12 @@ export function Home() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <img
-                src="/assets/eyes.jpeg"
+                src="https://images.unsplash.com/photo-1577876050215-134d70691e0c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXN0b20lMjBwcmludGVkJTIwdHNoaXJ0cyUyMGFwcGFyZWx8ZW58MXx8fHwxNzcwNzQ3NjI3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                 alt="Custom Apparel"
                 className="rounded-lg shadow-xl w-full h-64 object-cover"
               />
               <img
-                src="/assets/hoodie1.jpeg"
+                src="https://images.unsplash.com/photo-1539042357369-956fb344118f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcmludGVkJTIwY29mZmVlJTIwbXVncyUyMG1lcmNoYW5kaXNlfGVufDF8fHx8MTc3MDc0NzYyN3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                 alt="Custom Merchandise"
                 className="rounded-lg shadow-xl w-full h-64 object-cover mt-8"
               />
@@ -149,30 +130,6 @@ export function Home() {
           </div>
         </div>
       </section>
-
-      {/* Trending Products */}
-      {trendingProducts.length > 0 && (
-        <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 mb-8">
-              <TrendingUp size={32} className="text-orange-500" />
-              <div>
-                <h2 className="text-3xl md:text-4xl">Trending Now</h2>
-                <p className="text-gray-600">Most popular products this week</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {trendingProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onQuickView={handleQuickView}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Featured Services */}
       <section className="py-16 md:py-24">
@@ -211,47 +168,6 @@ export function Home() {
           </div>
         </div>
       </section>
-
-      {/* Recommended Products */}
-      {recommendedProducts.length > 0 && (
-        <section className="py-16 md:py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl mb-4">Recommended For You</h2>
-              <p className="text-xl text-gray-600">
-                Handpicked products based on your preferences
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recommendedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onQuickView={handleQuickView}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Recently Viewed */}
-      {recentlyViewed.length > 0 && (
-        <section className="py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl mb-8">Recently Viewed Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentlyViewed.slice(0, 4).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onQuickView={handleQuickView}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Testimonials */}
       <section className="py-16 md:py-24 bg-orange-50">
@@ -296,16 +212,6 @@ export function Home() {
       </section>
 
       <Footer />
-
-      {/* Product Modal */}
-      <ProductModal
-        product={selectedProduct}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedProduct(null);
-        }}
-      />
     </div>
   );
 }
