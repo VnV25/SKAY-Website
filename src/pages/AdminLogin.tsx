@@ -3,47 +3,44 @@ import { Footer } from '../components/Footer';
 import { Lock, User } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { apiPost, type AdminUser } from '../utils/api';
+
+interface AdminLoginForm {
+  username: string;
+  password: string;
+}
+
+interface AdminLoginResponse {
+  token: string;
+  admin: AdminUser;
+  message?: string;
+}
 
 export function AdminLogin() {
   const navigate = useNavigate();
-  const [credentials, setCredentials] = useState({
+  const [credentials, setCredentials] = useState<AdminLoginForm>({
     username: '',
     password: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
+      const data = await apiPost<AdminLoginResponse>('/auth/admin/login', credentials);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Login failed');
-      }
-
-      const data = await response.json();
-      
-      // Store token in sessionStorage (clears when browser closes)
       sessionStorage.setItem('adminToken', data.token);
       sessionStorage.setItem('adminUser', JSON.stringify(data.admin));
-      
-      // Clear any old localStorage entries
       localStorage.removeItem('isAdminLoggedIn');
-      
+
       navigate('/admin/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      setError(message);
       setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
@@ -118,14 +115,6 @@ export function AdminLogin() {
                 {loading ? 'Logging in...' : 'Login'}
               </button>
             </form>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-center text-sm text-gray-600 mb-3">Demo Admin Account:</p>
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 space-y-1 text-xs">
-                <p><strong>Username:</strong> admin</p>
-                <p><strong>Password:</strong> admin123</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>

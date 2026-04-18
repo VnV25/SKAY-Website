@@ -13,7 +13,17 @@
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
-  "keywords": ["ecommerce", "mern", "react", "vite", "express", "mongodb"],
+  "keywords": [
+    "ecommerce",
+    "mern",
+    "react",
+    "vite",
+    "express",
+    "mongodb"
+  ],
   "author": "SKAY Team",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6"
+  }
 }

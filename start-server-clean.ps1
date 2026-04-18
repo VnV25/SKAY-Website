@@ -1,26 +1,46 @@
-# SKAY Backend Server Launcher (PowerShell)
+param(
+    [int]$Port = 5001
+)
+
+$ErrorActionPreference = 'Stop'
+$backendPath = Join-Path $PSScriptRoot 'backend'
+
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "SKAY Backend Server Launcher" -ForegroundColor Cyan
 Write-Host "========================================`n" -ForegroundColor Cyan
 
-# Kill any process using port 5000
-Write-Host "Checking for processes on port 5000..." -ForegroundColor Yellow
-$portProcess = Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue
-if ($portProcess) {
-    $pid = $portProcess.OwningProcess
-    Write-Host "Found process PID: $pid" -ForegroundColor Yellow
-    Write-Host "Killing process..." -ForegroundColor Yellow
-    Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
-    Write-Host "Process killed successfully!`n" -ForegroundColor Green
-} else {
-    Write-Host "No process found on port 5000. Proceeding...`n" -ForegroundColor Green
+if (-not (Test-Path $backendPath)) {
+    throw "Backend folder not found at: $backendPath"
 }
 
-# Start the backend server
-Write-Host "Starting SKAY Backend Server..." -ForegroundColor Cyan
-Write-Host "Port: 5000" -ForegroundColor White
-Write-Host "Health check: http://localhost:5000/api/health`n" -ForegroundColor White
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    throw "Node.js is not installed or not available in PATH."
+}
 
-Set-Location "$PSScriptRoot\backend"
-node server.js
+Write-Host "Checking for processes on port $Port..." -ForegroundColor Yellow
+$owningProcessIds = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty OwningProcess -Unique
+
+if ($owningProcessIds) {
+    foreach ($owningProcessId in $owningProcessIds) {
+        Write-Host "Stopping process PID: $owningProcessId" -ForegroundColor Yellow
+        Stop-Process -Id $owningProcessId -Force -ErrorAction SilentlyContinue
+    }
+
+    Start-Sleep -Seconds 2
+    Write-Host "Port $Port is clear.`n" -ForegroundColor Green
+} else {
+    Write-Host "No process found on port $Port. Proceeding...`n" -ForegroundColor Green
+}
+
+Write-Host "Starting SKAY Backend Server..." -ForegroundColor Cyan
+Write-Host "Port: $Port" -ForegroundColor White
+Write-Host "Health check: http://localhost:$Port/api/health`n" -ForegroundColor White
+
+Push-Location $backendPath
+try {
+    $env:PORT = $Port
+    node server.js
+} finally {
+    Pop-Location
+}

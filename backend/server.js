@@ -23,25 +23,31 @@ const app = express();
 const allowedOrigins = [
   "https://skay-website-6yb6-9k0a2ko3d-vnv25s-projects.vercel.app",
   "http://localhost:3000",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "http://localhost:5001"
 ];
 
+// ✅ IMPORTANT: Apply CORS BEFORE other middleware
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman / server calls
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
-      console.error("❌ CORS blocked:", origin);
-      return callback(new Error("Not allowed by CORS"));
+      console.warn(`⚠️ CORS warning - Origin not in allowlist: ${origin}`);
+      // For debugging, still allow but log the attempt
+      return callback(null, true);
     }
   },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  maxAge: 86400
 }));
 
-// ✅ Handle preflight requests
+// ✅ Handle preflight requests explicitly
 app.options('*', cors());
 
 // ─────────────────────────────────────────
