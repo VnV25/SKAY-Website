@@ -23,7 +23,8 @@ export function AdminSettings() {
   });
 
   useEffect(() => {
-    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    // 🔥 FIXED: Use consistent 'skay-admin-token' key
+    const adminToken = localStorage.getItem('skay-admin-token');
     if (!adminUser || !adminToken) {
       navigate('/admin');
     } else {

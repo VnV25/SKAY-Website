@@ -1,16 +1,30 @@
-import { RouterProvider } from 'react-router';
-import { router } from './routes';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './routes.tsx';
+
 import { ShopProvider } from './context/ShopContext';
 import { AdminProvider } from './context/AdminContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-// Main App Component - Using react-router (not react-router-dom)
+function AppContent() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <h2 className="text-lg font-semibold">Loading...</h2>
+      </div>
+    );
+  }
+
+  return <RouterProvider router={router} />;
+}
+
 function App() {
   return (
     <AdminProvider>
       <AuthProvider>
         <ShopProvider>
-          <RouterProvider router={router} />
+          <AppContent />
         </ShopProvider>
       </AuthProvider>
     </AdminProvider>

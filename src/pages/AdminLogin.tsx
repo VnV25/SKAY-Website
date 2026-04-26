@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router';
 import { apiPost, type AdminUser } from '../utils/api';
 
 interface AdminLoginForm {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -19,7 +19,7 @@ interface AdminLoginResponse {
 export function AdminLogin() {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState<AdminLoginForm>({
-    username: '',
+    email: '',
     password: '',
   });
   const [error, setError] = useState('');
@@ -64,18 +64,18 @@ export function AdminLogin() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="username" className="block text-sm mb-2">
-                  Username
+                <label htmlFor="email" className="block text-sm mb-2">
+                  Email
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                   <input
-                    type="text"
-                    id="username"
-                    value={credentials.username}
-                    onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+                    type="email"
+                    id="email"
+                    value={credentials.email}
+                    onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Enter username"
+                    placeholder="Enter email"
                     required
                     disabled={loading}
                   />

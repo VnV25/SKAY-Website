@@ -2,7 +2,7 @@
    api.js – Fetch wrapper for SKAY backend
    ============================================================ */
 
-const API_BASE = window.location.origin.replace(/:\d+/, ':5001') + '/api';
+const API_BASE = window.location.origin + '/api';
 
 function getAuthHeaders() {
   // Admin token takes priority over customer token

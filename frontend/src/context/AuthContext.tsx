@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -21,8 +27,11 @@ export interface AdminUser {
 interface AuthContextType {
   customerUser: CustomerUser | null;
   adminUser: AdminUser | null;
+  loading: boolean;
+
   setCustomerSession: (user: CustomerUser, token?: string) => void;
   clearCustomerSession: () => void;
+
   setAdminSession: (user: AdminUser, token?: string) => void;
   clearAdminSession: () => void;
 }
@@ -30,83 +39,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const CUSTOMER_STORAGE_KEY = 'customerUser';
-const CUSTOMER_TOKEN_KEY = 'customerToken';
+const CUSTOMER_COMPAT_KEY = 'skay-user';
+const CUSTOMER_TOKEN_KEY = 'skay-token';
 const ADMIN_STORAGE_KEY = 'adminUser';
-const ADMIN_TOKEN_KEY = 'adminToken';
-const ADMIN_FLAG_KEY = 'isAdminLoggedIn';
+const ADMIN_TOKEN_KEY = 'skay-admin-token';
 
-function getStorage() {
-  return window.sessionStorage;
-}
-
-function clearLegacyStorage() {
-  window.localStorage.removeItem(CUSTOMER_STORAGE_KEY);
-  window.localStorage.removeItem(CUSTOMER_TOKEN_KEY);
-  window.localStorage.removeItem(ADMIN_STORAGE_KEY);
-  window.localStorage.removeItem(ADMIN_TOKEN_KEY);
-  window.localStorage.removeItem(ADMIN_FLAG_KEY);
-}
-
-function normalizeCustomerName(user: Partial<CustomerUser> & Record<string, any>) {
+function normalizeCustomerName(user: any) {
   return (
     user?.name ||
     user?.full_name ||
     user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
     user?.email ||
     'Customer'
   );
-}
-
-function normalizeCustomerUser(user: Record<string, any> | null | undefined): CustomerUser | null {
-  if (!user) return null;
-
-  return {
-    id: user.id,
-    email: user.email || '',
-    name: normalizeCustomerName(user),
-    avatarUrl: user.avatarUrl || user.user_metadata?.avatar_url || user.user_metadata?.picture,
-    provider: user.provider || user.app_metadata?.provider,
-  };
-}
-
-function readJSON<T>(key: string): T | null {
-  const value = getStorage().getItem(key) || window.localStorage.getItem(key);
-  if (!value) return null;
-
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return null;
-  }
-}
-
-function syncCustomerToStorage(user: CustomerUser | null, token?: string) {
-  const storage = getStorage();
-  if (user) {
-    storage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(user));
-    if (token) storage.setItem(CUSTOMER_TOKEN_KEY, token);
-  } else {
-    storage.removeItem(CUSTOMER_STORAGE_KEY);
-    storage.removeItem(CUSTOMER_TOKEN_KEY);
-  }
-  clearLegacyStorage();
-  window.dispatchEvent(new Event('customer-auth-changed'));
-}
-
-function syncAdminToStorage(user: AdminUser | null, token?: string) {
-  const storage = getStorage();
-  if (user) {
-    storage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(user));
-    storage.setItem(ADMIN_FLAG_KEY, 'true');
-    if (token) storage.setItem(ADMIN_TOKEN_KEY, token);
-  } else {
-    storage.removeItem(ADMIN_STORAGE_KEY);
-    storage.removeItem(ADMIN_TOKEN_KEY);
-    storage.removeItem(ADMIN_FLAG_KEY);
-  }
-  clearLegacyStorage();
-  window.dispatchEvent(new Event('admin-auth-changed'));
 }
 
 function sessionToCustomerUser(session: Session | null): CustomerUser | null {
@@ -116,96 +61,153 @@ function sessionToCustomerUser(session: Session | null): CustomerUser | null {
     id: session.user.id,
     email: session.user.email || '',
     name: normalizeCustomerName(session.user),
-    avatarUrl: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+    avatarUrl: session.user.user_metadata?.avatar_url,
     provider: session.user.app_metadata?.provider,
   };
 }
 
+function readJSON<T>(key: string): T | null {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistCustomer(user: CustomerUser | null) {
+  if (user) {
+    localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(user));
+    localStorage.setItem(CUSTOMER_COMPAT_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(CUSTOMER_STORAGE_KEY);
+    localStorage.removeItem(CUSTOMER_COMPAT_KEY);
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [customerUser, setCustomerUser] = useState<CustomerUser | null>(() =>
-    normalizeCustomerUser(readJSON<Record<string, any>>(CUSTOMER_STORAGE_KEY))
-  );
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(() =>
-    readJSON<AdminUser>(ADMIN_STORAGE_KEY)
-  );
+  const [customerUser, setCustomerUser] = useState<CustomerUser | null>(null);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    clearLegacyStorage();
 
-    const hydrateFromSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-      const nextUser = sessionToCustomerUser(session);
-      if (nextUser) {
-        setCustomerUser(nextUser);
-        getStorage().setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(nextUser));
-      } else {
-        syncCustomerToStorage(null);
+    const bootstrapAuth = async () => {
+      try {
+        const storedAdmin = readJSON<AdminUser>(ADMIN_STORAGE_KEY);
+        if (storedAdmin && mounted) {
+          setAdminUser(storedAdmin);
+        }
+
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error('Supabase getSession error:', sessionError);
+        }
+
+        console.log('[Auth] session on app start:', sessionData?.session);
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error('Supabase getUser error:', userError);
+        }
+
+        console.log('[Auth] user on app start:', userData?.user);
+
+        const sessionUser = sessionToCustomerUser(sessionData?.session || null);
+
+        if (mounted) {
+          if (sessionUser) {
+            setCustomerUser(sessionUser);
+            persistCustomer(sessionUser);
+          } else {
+            const storedCustomer = readJSON<CustomerUser>(CUSTOMER_STORAGE_KEY) || readJSON<CustomerUser>(CUSTOMER_COMPAT_KEY);
+            setCustomerUser(storedCustomer);
+            persistCustomer(storedCustomer);
+          }
+        }
+      } catch (error) {
+        console.error('[Auth] bootstrap failed:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    hydrateFromSession().catch(() => undefined);
+    bootstrapAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const nextUser = sessionToCustomerUser(session);
-      if (nextUser) {
-        setCustomerUser(nextUser);
-        getStorage().setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(nextUser));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] onAuthStateChange:', event, session);
+
+      const user = sessionToCustomerUser(session);
+
+      if (user) {
+        setCustomerUser(user);
+        persistCustomer(user);
+        console.log('[Auth] user after login:', user);
+
+        const supabaseToken = session?.access_token;
+
+        if (supabaseToken) {
+          try {
+            const res = await fetch('/api/auth/google-login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: supabaseToken }),
+            });
+
+            const data = await res.json();
+            if (data?.token) {
+              localStorage.setItem(CUSTOMER_TOKEN_KEY, data.token);
+            }
+          } catch (err) {
+            console.error('JWT exchange failed:', err);
+          }
+        }
       } else {
         setCustomerUser(null);
-        syncCustomerToStorage(null);
+        persistCustomer(null);
+        localStorage.removeItem(CUSTOMER_TOKEN_KEY);
       }
     });
-
-    const handleCustomerChange = () => {
-      setCustomerUser(normalizeCustomerUser(readJSON<Record<string, any>>(CUSTOMER_STORAGE_KEY)));
-    };
-
-    const handleAdminChange = () => {
-      setAdminUser(readJSON<AdminUser>(ADMIN_STORAGE_KEY));
-    };
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === CUSTOMER_STORAGE_KEY || event.key === CUSTOMER_TOKEN_KEY) {
-        handleCustomerChange();
-      }
-      if (event.key === ADMIN_STORAGE_KEY || event.key === ADMIN_TOKEN_KEY || event.key === ADMIN_FLAG_KEY) {
-        handleAdminChange();
-      }
-    };
-
-    window.addEventListener('customer-auth-changed', handleCustomerChange);
-    window.addEventListener('admin-auth-changed', handleAdminChange);
-    window.addEventListener('storage', handleStorage);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      window.removeEventListener('customer-auth-changed', handleCustomerChange);
-      window.removeEventListener('admin-auth-changed', handleAdminChange);
-      window.removeEventListener('storage', handleStorage);
     };
   }, []);
 
   const setCustomerSession = (user: CustomerUser, token?: string) => {
     setCustomerUser(user);
-    syncCustomerToStorage(user, token);
+    persistCustomer(user);
+
+    if (token) {
+      localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+    }
   };
 
   const clearCustomerSession = () => {
     setCustomerUser(null);
-    syncCustomerToStorage(null);
+    persistCustomer(null);
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
   };
 
   const setAdminSession = (user: AdminUser, token?: string) => {
     setAdminUser(user);
-    syncAdminToStorage(user, token);
+    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(user));
+
+    if (token) {
+      localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    }
   };
 
   const clearAdminSession = () => {
     setAdminUser(null);
-    syncAdminToStorage(null);
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
   };
 
   return (
@@ -213,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         customerUser,
         adminUser,
+        loading,
         setCustomerSession,
         clearCustomerSession,
         setAdminSession,
@@ -226,8 +229,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }
+
   return context;
 }

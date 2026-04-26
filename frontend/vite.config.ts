@@ -1,11 +1,14 @@
 
   import { defineConfig } from 'vite';
-  import react from '@vitejs/plugin-react';
+  import react from '@vitejs/plugin-react-swc';
   import tailwindcss from '@tailwindcss/vite';
   import path from 'path';
 
+  const devPort = process.env.PORT ? Number(process.env.PORT) : 5173;
+
   export default defineConfig({
     plugins: [react(), tailwindcss()],
+    assetsInclude: ['**/*.html'],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
@@ -57,12 +60,12 @@
       outDir: 'dist',
     },
     server: {
-      port: 5173,
-      strictPort: true,
+      port: Number.isFinite(devPort) ? devPort : 5173,
+      strictPort: false,
       open: true,
       proxy: {
         '/api': {
-          target: 'http://localhost:5001',
+          target: 'http://localhost:5000',
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api/, '/api'),
         },

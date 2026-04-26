@@ -1,34 +1,29 @@
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Phone, Mail, MapPin, Clock, Instagram, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Contact() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
-      {/* Hero Section */}
       <section className="bg-gradient-to-br from-orange-50 to-white py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6">Contact Us</h1>
-            <p className="text-xl text-gray-600">
-              Get in touch with our team. We're here to help bring your ideas to life.
-            </p>
+            <p className="text-xl text-gray-600">Get in touch with our team. We're here to help bring your ideas to life.</p>
           </div>
         </div>
       </section>
 
-      {/* Contact Information */}
       <section className="py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12">
-            {/* Contact Details */}
             <div>
               <h2 className="text-3xl mb-8">Get In Touch</h2>
-              
+
               <div className="space-y-6">
-                {/* Phone Numbers */}
                 <div className="flex items-start gap-4">
                   <div className="bg-orange-100 p-3 rounded-full">
                     <Phone className="text-orange-500" size={24} />
@@ -43,7 +38,6 @@ export function Contact() {
                   </div>
                 </div>
 
-                {/* Email */}
                 <div className="flex items-start gap-4">
                   <div className="bg-orange-100 p-3 rounded-full">
                     <Mail className="text-orange-500" size={24} />
@@ -55,7 +49,6 @@ export function Contact() {
                   </div>
                 </div>
 
-                {/* Location */}
                 <div className="flex items-start gap-4">
                   <div className="bg-orange-100 p-3 rounded-full">
                     <MapPin className="text-orange-500" size={24} />
@@ -68,7 +61,6 @@ export function Contact() {
                   </div>
                 </div>
 
-                {/* Business Hours */}
                 <div className="flex items-start gap-4">
                   <div className="bg-orange-100 p-3 rounded-full">
                     <Clock className="text-orange-500" size={24} />
@@ -82,7 +74,6 @@ export function Contact() {
                 </div>
               </div>
 
-              {/* Social Media */}
               <div className="mt-8">
                 <h3 className="text-lg mb-4">Follow Us</h3>
                 <div className="flex gap-4">
@@ -106,9 +97,7 @@ export function Contact() {
               </div>
             </div>
 
-            {/* Map / Quick Contact Form */}
             <div>
-              {/* Google Maps Placeholder */}
               <div className="bg-gray-200 rounded-lg overflow-hidden mb-6 h-64">
                 <iframe
                   src="https://maps.google.com/maps?q=Ekdant%20Corner%2C%20nearby%20Polyhub%20Food%20Court%2C%20Skncoe%20College%2C%20Vadgaon%20Badruk-411041%2C%20Pune&output=embed"
@@ -119,24 +108,22 @@ export function Contact() {
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   title="SKAY Printing Services Location"
-                ></iframe>
+                />
               </div>
 
-              {/* Quick Contact Card */}
               <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-8 rounded-lg">
                 <h3 className="text-2xl mb-4">Need a Quick Quote?</h3>
                 <p className="mb-6 opacity-90">
                   For detailed project requirements, use our quote form to get a comprehensive estimate within 24 hours.
                 </p>
-                <a
-                  href="/quote"
+                <Link
+                  to="/quote"
                   className="bg-white text-orange-500 px-6 py-3 rounded-md hover:bg-gray-100 transition-colors inline-block"
                 >
                   Request Quote Now
-                </a>
+                </Link>
               </div>
 
-              {/* WhatsApp Direct */}
               <div className="mt-6 bg-green-50 border border-green-200 p-6 rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <MessageCircle className="text-green-600" size={32} />
@@ -160,11 +147,10 @@ export function Contact() {
         </div>
       </section>
 
-      {/* FAQ Section */}
       <section className="py-16 md:py-24 bg-orange-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl text-center mb-12">Frequently Asked Questions</h2>
-          
+
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-lg mb-2">What is the minimum order quantity?</h3>
@@ -172,21 +158,21 @@ export function Contact() {
                 We accept orders starting from as low as 1 piece for most items. Bulk discounts are available for larger quantities.
               </p>
             </div>
-            
+
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-lg mb-2">How long does it take to complete an order?</h3>
               <p className="text-gray-600">
                 Standard orders typically take 3-7 business days. Rush orders can be accommodated with additional charges. Timeline varies based on product type and quantity.
               </p>
             </div>
-            
+
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-lg mb-2">Do you provide design services?</h3>
               <p className="text-gray-600">
                 Yes! Our design team can help create custom designs for your products. Just share your ideas and we'll bring them to life.
               </p>
             </div>
-            
+
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-lg mb-2">What file formats do you accept?</h3>
               <p className="text-gray-600">

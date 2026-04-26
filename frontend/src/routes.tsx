@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter } from "react-router-dom";
+
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Services } from "./pages/Services";
@@ -13,7 +14,10 @@ import { AdminSettings } from "./pages/AdminSettings";
 import { AdminProducts } from "./pages/AdminProducts";
 import { Wishlist } from "./pages/Wishlist";
 import { CustomizedMerchandise } from "./pages/CustomizedMerchandise";
+import { PaymentSuccess } from "./pages/PaymentSuccess";
 import { NotFound } from "./pages/NotFound";
+
+import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +53,10 @@ export const router = createBrowserRouter([
     Component: Contact,
   },
   {
+    path: "/payment-success",
+    Component: PaymentSuccess,
+  },
+  {
     path: "/auth",
     Component: CustomerAuth,
   },
@@ -60,22 +68,39 @@ export const router = createBrowserRouter([
     path: "/wishlist",
     Component: Wishlist,
   },
+
   {
     path: "/admin",
     Component: AdminLogin,
   },
+
   {
     path: "/admin/dashboard",
-    Component: AdminDashboard,
+    Component: () => (
+      <AdminProtectedRoute>
+        <AdminDashboard />
+      </AdminProtectedRoute>
+    ),
   },
+
   {
     path: "/admin/settings",
-    Component: AdminSettings,
+    Component: () => (
+      <AdminProtectedRoute>
+        <AdminSettings />
+      </AdminProtectedRoute>
+    ),
   },
+
   {
     path: "/admin/products",
-    Component: AdminProducts,
+    Component: () => (
+      <AdminProtectedRoute>
+        <AdminProducts />
+      </AdminProtectedRoute>
+    ),
   },
+
   {
     path: "*",
     Component: NotFound,

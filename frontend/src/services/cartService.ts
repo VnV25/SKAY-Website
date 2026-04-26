@@ -1,7 +1,8 @@
 // Cart service for API calls
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = '/api';
 
-const getToken = () => sessionStorage.getItem('customerToken') || localStorage.getItem('customerToken');
+// 🔥 FIXED: Use consistent 'skay-token' key
+const getToken = () => localStorage.getItem('skay-token');
 
 export const cartService = {
   // Get user's cart

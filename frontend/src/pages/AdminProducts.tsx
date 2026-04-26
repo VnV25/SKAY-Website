@@ -5,20 +5,21 @@ import { useEffect, useState } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { useAuth } from '../context/AuthContext';
 import { Product } from '../context/ShopContext';
-import { Edit2, Trash2, Save, X, Plus, TrendingUp, Star } from 'lucide-react';
+import { Edit2, Trash2, Save, X, TrendingUp, Star } from 'lucide-react';
 
 export function AdminProducts() {
   const navigate = useNavigate();
   const { adminUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const { products, updateProduct, deleteProduct, addProduct, resetProducts } = useAdmin();
+  const { products, updateProduct, deleteProduct, resetProducts } = useAdmin();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Product>>({});
   const [filter, setFilter] = useState('all');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    // 🔥 FIXED: Use consistent 'skay-admin-token' key
+    const adminToken = localStorage.getItem('skay-admin-token');
     if (!adminUser || !adminToken) {
       navigate('/admin');
     } else {

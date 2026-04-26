@@ -95,6 +95,40 @@ const defaultTestimonials: Testimonial[] = [
   },
 ];
 
+function normalizeProductsPayload(payload: any): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.products)) return payload.products;
+  return [];
+}
+
+function mapBackendProduct(item: any): Product {
+  const imagesCandidate = item?.images && typeof item.images === 'object'
+    ? Object.values(item.images as Record<string, string>)
+    : [];
+
+  const category = typeof item?.category === 'string' ? item.category : 'apparel';
+
+  return {
+    id: String(item?._id || item?.id || `product-${Date.now()}`),
+    name: item?.name || 'Untitled Product',
+    category,
+    price: Number(item?.price || 0),
+    originalPrice: Number(item?.originalPrice || item?.price || 0),
+    image: String(item?.image || imagesCandidate[0] || ''),
+    rating: Number(item?.rating || 4.5),
+    reviews: Number(item?.reviews || 0),
+    stock: Number(item?.stock || 0),
+    sizes: Array.isArray(item?.sizes) ? item.sizes : [],
+    colors: Array.isArray(item?.colors)
+      ? item.colors.map((c: any) => (typeof c === 'string' ? c : c?.name)).filter(Boolean)
+      : [],
+    trending: Boolean(item?.featured || item?.trending),
+    discount: Number(item?.discount || 0),
+    description: item?.description || '',
+  } as Product;
+}
+
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [testimonials, setTestimonials] = useState<Testimonial[]>(defaultTestimonials);
@@ -107,33 +141,28 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
     if (savedSettings) setSettings(JSON.parse(savedSettings));
     if (savedTestimonials) setTestimonials(JSON.parse(savedTestimonials));
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
+    if (savedProducts) {
+      const parsed = JSON.parse(savedProducts);
+      if (Array.isArray(parsed)) setProducts(parsed);
+    }
 
-    // fetch products from API and merge
-    api.products.list()
+    api.products
+      .list()
       .then((data: any) => {
-        const backendProducts = data?.products || data;
-        if (Array.isArray(backendProducts) && backendProducts.length > 0) {
-          setProducts(backendProducts.map((item: any) => ({
-            id: item._id || item.id,
-            name: item.name,
-            category: item.category,
-            price: item.price,
-            originalPrice: item.originalPrice,
-            image: Object.values(item.images || {})[0] || item.image || '',
-            rating: item.rating || 4.5,
-            reviews: item.reviews || 0,
-            stock: item.stock || 0,
-            sizes: item.sizes || [],
-            colors: item.colors ? item.colors.map((c: any) => (typeof c === 'string' ? c : c.name)) : [],
-            trending: item.featured || item.trending || false,
-            discount: item.discount || 0,
-            description: item.description || '',
-          })));
+        console.log('[AdminContext] products payload:', data);
+        const backendProducts = normalizeProductsPayload(data);
+
+        if (backendProducts.length > 0) {
+          setProducts(backendProducts.map(mapBackendProduct));
+          return;
+        }
+
+        if (!savedProducts) {
+          setProducts(initialProducts);
         }
       })
-      .catch(() => {
-        // ignore; use local data fallback
+      .catch((error) => {
+        console.error('[AdminContext] failed to load products:', error);
       });
   }, []);
 
@@ -150,11 +179,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [products]);
 
   const updateSettings = (newSettings: Partial<SiteSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    setSettings((prev) => ({ ...prev, ...newSettings }));
   };
 
   const updateAnnouncement = (announcement: Partial<AnnouncementSettings>) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       announcement: { ...prev.announcement, ...announcement },
     }));
@@ -165,51 +194,40 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       ...testimonial,
       id: Date.now().toString(),
     };
-    setTestimonials(prev => [...prev, newTestimonial]);
+    setTestimonials((prev) => [...prev, newTestimonial]);
   };
 
   const updateTestimonial = (id: string, testimonial: Partial<Testimonial>) => {
-    setTestimonials(prev =>
-      prev.map(t => (t.id === id ? { ...t, ...testimonial } : t))
-    );
+    setTestimonials((prev) => prev.map((t) => (t.id === id ? { ...t, ...testimonial } : t)));
   };
 
   const deleteTestimonial = (id: string) => {
-    setTestimonials(prev => prev.filter(t => t.id !== id));
+    setTestimonials((prev) => prev.filter((t) => t.id !== id));
   };
 
   const toggleTestimonial = (id: string) => {
-    setTestimonials(prev =>
-      prev.map(t => (t.id === id ? { ...t, enabled: !t.enabled } : t))
-    );
+    setTestimonials((prev) => prev.map((t) => (t.id === id ? { ...t, enabled: !t.enabled } : t)));
   };
 
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
       await api.products.update(id, product);
-      setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...product } : p)));
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...product } : p)));
     } catch (error) {
       console.error('Failed to update product', error);
-      // fallback update locally
-      setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...product } : p)));
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...product } : p)));
     }
   };
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
       const created = await api.products.create(product);
-      const newProduct = {
-        ...product,
-        id: created?.product?._id || created?.product?.id || `product-${Date.now()}`,
-      };
-      setProducts(prev => [...prev, newProduct]);
+      const payload = created?.product || created?.data?.[0] || created;
+      const mapped = mapBackendProduct(payload || { ...product, id: `product-${Date.now()}` });
+      setProducts((prev) => [...prev, mapped]);
     } catch (error) {
       console.error('Failed to create product', error);
-      const newProduct = {
-        ...product,
-        id: `product-${Date.now()}`,
-      };
-      setProducts(prev => [...prev, newProduct]);
+      setProducts((prev) => [...prev, { ...product, id: `product-${Date.now()}` }]);
     }
   };
 
@@ -217,10 +235,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
       await api.products.delete(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
+      setProducts((prev) => prev.filter((p) => p.id !== id));
     } catch (error) {
       console.error('Failed to delete product', error);
-      setProducts(prev => prev.filter(p => p.id !== id));
+      setProducts((prev) => prev.filter((p) => p.id !== id));
     }
   };
 

@@ -8,9 +8,8 @@ import { ServiceModal } from '../components/ServiceModal';
 import { useAdmin } from '../context/AdminContext';
 import { bundles } from '../data/products';
 import { Product } from '../context/ShopContext';
-import { Gift, TrendingUp, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router';
-import { ArrowRight } from 'lucide-react';
+import { Gift, TrendingUp, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { serviceCategories, ServiceItem } from '../data/services';
 
 export function Services() {

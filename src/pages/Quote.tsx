@@ -2,6 +2,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Upload, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
+import { apiPost } from '../utils/api';
 
 export function Quote() {
   const [formData, setFormData] = useState({
@@ -51,28 +52,38 @@ export function Quote() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, this would send data to a backend
-    console.log('Form submitted:', formData);
-    setSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({
-        name: '',
-        company: '',
-        phone: '',
-        email: '',
-        serviceType: '',
-        color: '',
-        size: '',
-        quantity: '',
-        description: '',
+    try {
+      const response = await apiPost('/services/quote', {
+        name: formData.name,
+        email: formData.email,
+        service: formData.serviceType,
+        message: `Company: ${formData.company || 'N/A'}\nPhone: ${formData.phone}\nColor: ${formData.color}\nSize: ${formData.size}\nQuantity: ${formData.quantity}\nDescription: ${formData.description}`,
       });
-      setFileName('');
-    }, 3000);
+      console.log('Quote submitted:', response);
+      setSubmitted(true);
+      
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setSubmitted(false);
+        setFormData({
+          name: '',
+          company: '',
+          phone: '',
+          email: '',
+          serviceType: '',
+          color: '',
+          size: '',
+          quantity: '',
+          description: '',
+        });
+        setFileName('');
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to submit quote:', error);
+      alert('Failed to submit quote. Please try again.');
+    }
   };
 
   const isFormValid = () => {
