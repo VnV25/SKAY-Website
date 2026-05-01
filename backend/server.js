@@ -47,12 +47,8 @@ const localhostPattern = /^http:\/\/(127\.0\.0\.1|localhost):\d+$/;
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || localhostPattern.test(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error(`Not allowed by CORS for origin ${origin}`));
+      // Dynamic origin to allow all domains (like Vercel) while keeping credentials to true
+      callback(null, origin || true);
     },
     credentials: true,
   })
