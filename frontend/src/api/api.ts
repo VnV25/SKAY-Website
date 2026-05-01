@@ -1,14 +1,35 @@
 /// <reference types="vite/client" />
 
 // ─── Base URL ─────────────────────────────────────────────────────────────────
-// In development Vite proxies /api → http://localhost:5000/api (see vite.config.ts).
-// In production the frontend and backend share the same origin, so /api works directly.
+// All API calls use VITE_API_URL — set this in your environment:
+//
+//   Development (.env.local):
+//     VITE_API_URL=http://localhost:5000/api
+//     The Vite dev server proxies /api → that target (see vite.config.ts)
+//     so relative /api calls work without CORS issues.
+//
+//   Production (Vercel / hosting env vars):
+//     VITE_API_URL=<your-backend-url>/api
+//     The full absolute URL is used directly — no proxy needed.
+//
+//   Fallback (no env var set):
+//     /api  — works when frontend and backend share the same origin.
+
+const _rawApiUrl = (import.meta.env.VITE_API_URL ?? '').trim();
+
 const API_BASE = (() => {
-  const raw = (import.meta.env.VITE_API_URL ?? '/api').trim();
-  // Always use a relative /api path when running in the browser to avoid
-  // CORS issues and to let the Vite proxy / reverse proxy handle routing.
-  if (typeof window !== 'undefined') return '/api';
-  return raw.endsWith('/') ? raw.slice(0, -1) : raw;
+  if (!_rawApiUrl) {
+    // No env var — use relative path (works when same origin)
+    return '/api';
+  }
+
+  // Absolute URL (http/https) — use directly. This is the production case.
+  if (_rawApiUrl.startsWith('http://') || _rawApiUrl.startsWith('https://')) {
+    return _rawApiUrl.endsWith('/') ? _rawApiUrl.slice(0, -1) : _rawApiUrl;
+  }
+
+  // Relative value (e.g. "/api") — use as-is
+  return _rawApiUrl.endsWith('/') ? _rawApiUrl.slice(0, -1) : _rawApiUrl;
 })();
 
 const DEFAULT_TIMEOUT_MS = 15_000;
