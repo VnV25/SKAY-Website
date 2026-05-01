@@ -52,7 +52,52 @@
     },
     build: {
       target: 'esnext',
-      outDir: 'build',
+      outDir: 'dist',
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+        },
+      },
+      chunkSizeWarningLimit: 2000,
+      cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+                return 'vendor-core';
+              }
+              if (id.includes('@radix-ui')) {
+                return 'vendor-ui';
+              }
+              if (id.includes('recharts') || id.includes('embla-carousel')) {
+                return 'vendor-charts';
+              }
+              if (id.includes('react-hook-form') || id.includes('cmdk') || id.includes('input-otp') || id.includes('react-day-picker')) {
+                return 'vendor-forms';
+              }
+              if (id.includes('@stripe') || id.includes('@supabase')) {
+                return 'vendor-services';
+              }
+              return 'vendor-other';
+            }
+          },
+          entryFileNames: 'js/[name]-[hash].js',
+          chunkFileNames: 'js/[name]-[hash].js',
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name.split('.');
+            const ext = info[info.length - 1];
+            if (/png|jpe?g|gif|svg/.test(ext)) {
+              return `assets/images/[name]-[hash][extname]`;
+            }
+            if (ext === 'css') {
+              return `css/[name]-[hash][extname]`;
+            }
+            return `assets/[name]-[hash][extname]`;
+          },
+        },
+      },
     },
     server: {
       port: 3000,
