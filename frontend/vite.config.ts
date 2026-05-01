@@ -8,7 +8,6 @@
 
   export default defineConfig({
     plugins: [react(), tailwindcss()],
-    assetsInclude: ['**/*.html'],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {

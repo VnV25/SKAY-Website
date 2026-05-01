@@ -9,7 +9,7 @@ export function Gallery() {
   const filters = [
     { id: 'all', label: 'All' },
     { id: 'apparel', label: 'Apparel' },
-    { id: 'mugs', label: 'Mugs/Gifts' },
+    { id: 'mugs', label: 'Mugs / Gifts' },
     { id: 'corporate', label: 'Corporate' },
     { id: 'embroidery', label: 'Embroidery' },
   ];
@@ -19,33 +19,36 @@ export function Gallery() {
     : galleryItems.filter(item => item.category === activeFilter);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-orange-50 to-white py-16 md:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Hero */}
+      <section className="py-20 md:py-28 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6">Our Portfolio</h1>
-            <p className="text-xl text-gray-600">
-              Explore our collection of 500+ completed projects showcasing quality and creativity
+            <h1 className="text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400 mb-5">
+              Our Portfolio
+            </h1>
+            <p className="text-xl text-white/60 leading-relaxed">
+              Explore our collection of 500+ completed projects showcasing quality and creativity.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Filter Buttons */}
-      <section className="py-8 bg-white sticky top-[72px] z-40 shadow-sm">
+      {/* Filter Bar */}
+      <section className="py-5 bg-white/5 backdrop-blur-lg border-y border-white/10 sticky top-[72px] z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap gap-2.5 justify-center">
             {filters.map((filter) => (
               <button
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
-                className={`px-6 py-2 rounded-full transition-all ${
+                className={`px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeFilter === filter.id
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/25'
+                    : 'bg-white/10 border border-white/15 text-white/60 hover:bg-white/20 hover:text-white'
                 }`}
               >
                 {filter.label}
@@ -56,25 +59,25 @@ export function Gallery() {
       </section>
 
       {/* Gallery Grid */}
-      <section className="py-16 md:py-24">
+      <section className="py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredItems.map((item) => (
               <div
                 key={item.id}
-                className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300"
+                className="group relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="aspect-square overflow-hidden">
                   <img
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <h3 className="text-lg mb-1">{item.title}</h3>
-                    <p className="text-sm text-gray-200">{item.description}</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-white font-semibold text-sm mb-1">{item.title}</h3>
+                    <p className="text-white/70 text-xs">{item.description}</p>
                   </div>
                 </div>
               </div>
@@ -82,32 +85,31 @@ export function Gallery() {
           </div>
 
           {filteredItems.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-xl text-gray-500">No items found in this category</p>
+            <div className="text-center py-16">
+              <p className="text-white/40 text-lg">No items found in this category</p>
             </div>
           )}
         </div>
       </section>
 
       {/* Stats Banner */}
-      <section className="py-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+      <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl mb-2">500+</div>
-              <div className="text-sm opacity-90">Projects Completed</div>
-            </div>
-            <div>
-              <div className="text-4xl mb-2">500+</div>
-              <div className="text-sm opacity-90">Happy Clients</div>
-            </div>
-            <div>
-              <div className="text-4xl mb-2">2+</div>
-              <div className="text-sm opacity-90">Years Experience</div>
-            </div>
-            <div>
-              <div className="text-4xl mb-2">100%</div>
-              <div className="text-sm opacity-90">Satisfaction Rate</div>
+          <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-lg border border-white/15 rounded-3xl py-10 px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              {[
+                { value: '500+', label: 'Projects Completed' },
+                { value: '500+', label: 'Happy Clients' },
+                { value: '2+', label: 'Years Experience' },
+                { value: '100%', label: 'Satisfaction Rate' },
+              ].map((stat, i) => (
+                <div key={i}>
+                  <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400 mb-1">
+                    {stat.value}
+                  </div>
+                  <div className="text-white/50 text-sm">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

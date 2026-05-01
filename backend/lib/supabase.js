@@ -1,34 +1,62 @@
-// Supabase client for backend
-require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase environment is not fully configured.');
-  if (!supabaseUrl) console.warn('   Missing SUPABASE_URL');
-  if (!supabaseServiceKey) console.warn('   Missing SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseAnonKey) console.warn('   Missing SUPABASE_ANON_KEY');
+const isValidSupabaseUrl = (url) => {
+  if (!url) return false;
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.endsWith('.supabase.co') && urlObj.protocol === 'https:';
+  } catch (err) {
+    console.error('[Supabase] URL validation failed:', err.message);
+    return false;
+  }
+};
+
+const missingEnv = [];
+if (!SUPABASE_URL) missingEnv.push('SUPABASE_URL');
+if (!SUPABASE_SERVICE_ROLE_KEY) missingEnv.push('SUPABASE_SERVICE_ROLE_KEY');
+
+const isSupabaseConfigured = missingEnv.length === 0 && isValidSupabaseUrl(SUPABASE_URL);
+
+console.log('[Supabase] Initialization:');
+console.log(`  URL: ${SUPABASE_URL ? '✓ Set' : '✗ Missing'}`);
+console.log(`  Service Key: ${SUPABASE_SERVICE_ROLE_KEY ? `✓ Set (${SUPABASE_SERVICE_ROLE_KEY.slice(0, 10)}...)` : '✗ Missing'}`);
+console.log(`  Valid URL: ${isValidSupabaseUrl(SUPABASE_URL) ? '✓ Yes' : '✗ No'}`);
+console.log(`  Status: ${isSupabaseConfigured ? '✓ READY' : '✗ NOT CONFIGURED'}`);
+if (missingEnv.length > 0) {
+  console.error('[Supabase] Missing required environment variables:', missingEnv.join(', '));
 }
 
-console.log('[Supabase] URL set:', !!supabaseUrl, 'Service key loaded:', !!supabaseServiceKey, 'Anon key loaded:', !!supabaseAnonKey);
+let supabase = null;
+let supabaseAuth = null;
 
-// Client with service role for admin operations (database queries, etc.)
-const supabase = createClient(supabaseUrl || '', supabaseServiceKey || '', {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+if (isSupabaseConfigured) {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+    supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY || SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+    console.log('[Supabase] ✓ Supabase client initialized');
+  } catch (err) {
+    console.error('[Supabase] ✗ Client initialization failed', err);
+    supabase = null;
+    supabaseAuth = null;
+  }
+}
 
-// Client with anon key for auth operations (signup, login, etc.)
-const supabaseAuth = createClient(supabaseUrl || '', supabaseAnonKey || '', {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
-
-module.exports = { supabase, supabaseAuth };
+module.exports = {
+  supabase,
+  isSupabaseConfigured,
+  supabaseAuth: supabaseAuth || supabase,
+};

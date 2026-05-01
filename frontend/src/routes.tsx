@@ -13,7 +13,6 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminSettings } from "./pages/AdminSettings";
 import { AdminProducts } from "./pages/AdminProducts";
 import { Wishlist } from "./pages/Wishlist";
-import { CustomizedMerchandise } from "./pages/CustomizedMerchandise";
 import { PaymentSuccess } from "./pages/PaymentSuccess";
 import { NotFound } from "./pages/NotFound";
 
@@ -35,10 +34,6 @@ export const router = createBrowserRouter([
   {
     path: "/services/detailed",
     Component: ServicesDetailed,
-  },
-  {
-    path: "/customized-merchandise",
-    Component: CustomizedMerchandise,
   },
   {
     path: "/quote",

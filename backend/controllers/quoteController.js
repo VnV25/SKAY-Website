@@ -1,30 +1,44 @@
-const supabase = require('../config/supabaseClient');
+const { supabase, isSupabaseConfigured } = require('../lib/supabase');
 
 const submitQuote = async (req, res) => {
   try {
-    console.log('Quote request body:', req.body);
+    if (!isSupabaseConfigured) {
+      return res.status(500).json({
+        success: false,
+        message: 'Supabase environment variables are missing on the server',
+      });
+    }
 
     const {
       name,
       email,
       service,
+      serviceType,
       message,
       company,
       phone,
       quantity,
       description,
+      color,
+      variant,
+      size,
     } = req.body;
 
-    if (!name || !email || !service) {
+    const normalizedService = service || serviceType;
+
+    if (!name || !email || !normalizedService) {
       return res.status(400).json({
+        success: false,
         message: 'Name, email, and service are required',
       });
     }
 
-    // ================= SAVE INQUIRY =================
     const contactMessage = [
-      `Service: ${service}`,
+      `Service: ${normalizedService}`,
       quantity ? `Quantity: ${quantity}` : null,
+      color ? `Color: ${color}` : null,
+      variant ? `Variant: ${variant}` : null,
+      size ? `Size: ${size}` : null,
       description ? `Description: ${description}` : null,
       company ? `Company: ${company}` : null,
       phone ? `Phone: ${phone}` : null,
@@ -50,44 +64,46 @@ const submitQuote = async (req, res) => {
     if (inquiryError) {
       console.error('Inquiry error:', inquiryError);
       return res.status(500).json({
-        message: 'Failed to save inquiry',
+        success: false,
+        message: inquiryError.message || 'Failed to save inquiry',
       });
     }
 
-    // ================= CREATE ORDER =================
-    const { error: orderError } = await supabase
-      .from('orders')
-      .insert([
-        {
-          customer_name: name,
-          email: email.toLowerCase(),
-          phone: phone || null,
-          service,
-          quantity: Number(quantity) || 1,
-          total: 0,
-          status: 'pending',
-        },
-      ]);
+    const { error: orderError } = await supabase.from('orders').insert([
+      {
+        customer_name: name,
+        email: email.toLowerCase(),
+        phone: phone || null,
+        service: normalizedService,
+        quantity: Number(quantity) || 1,
+        total: 0,
+        status: 'pending',
+      },
+    ]);
 
     if (orderError) {
       console.error('Order creation error:', orderError);
-
-      return res.status(500).json({
-        message: 'Inquiry saved but order creation failed',
+      return res.status(201).json({
+        success: true,
+        message: 'Inquiry saved successfully, but order creation failed',
+        inquiry,
+        inquiryId: inquiry.id,
+        orderCreated: false,
       });
     }
 
-    // ================= SUCCESS =================
-    res.status(201).json({
-      message: 'Quote submitted & order created successfully',
+    return res.status(201).json({
+      success: true,
+      message: 'Quote submitted successfully',
+      inquiry,
       inquiryId: inquiry.id,
+      orderCreated: true,
     });
-
   } catch (err) {
     console.error('Quote controller error:', err);
-
-    res.status(500).json({
-      message: 'Server error',
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Server error',
     });
   }
 };

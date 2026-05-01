@@ -19,13 +19,14 @@ interface StripeCheckoutFormProps {
 }
 
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
-const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
+const stripePromise = stripePublicKey
+  ? loadStripe(stripePublicKey).catch((error) => {
+      console.warn('Stripe failed to initialize:', error);
+      return null;
+    })
+  : null;
 
-function StripeCheckoutForm({
-  amountInPaise,
-  onPaymentSuccess,
-  onPaymentFailure,
-}: StripeCheckoutFormProps) {
+function StripeCheckoutForm({ amountInPaise, onPaymentSuccess, onPaymentFailure }: StripeCheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -46,47 +47,22 @@ function StripeCheckoutForm({
     onPaymentFailure("");
 
     try {
-      console.log("Creating payment intent for amount (paise):", amountInPaise);
-
-      const response = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("skay-token") || ""}`,
-        },
-        body: JSON.stringify({ amount: amountInPaise }),
-      });
-
-      const data = await response.json();
-      console.log("Create payment intent response:", data);
-
-      if (!response.ok || !data?.clientSecret) {
-        throw new Error(data?.message || "Unable to initialize payment");
-      }
+      const data = await api.payments.createIntent(amountInPaise);
+      if (!data?.clientSecret) throw new Error(data?.message || "Unable to initialize payment");
 
       const confirmation = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: "SKAY Customer",
-          },
-        },
+        payment_method: { card: cardElement, billing_details: { name: "SKAY Customer" } },
       });
 
-      if (confirmation.error) {
-        console.error("Stripe confirmation error:", confirmation.error);
-        throw new Error(confirmation.error.message || "Payment failed");
-      }
+      if (confirmation.error) throw new Error(confirmation.error.message || "Payment failed");
 
       if (confirmation.paymentIntent?.status === "succeeded" && confirmation.paymentIntent?.id) {
-        console.log("Stripe payment successful:", confirmation.paymentIntent.id);
         await onPaymentSuccess(confirmation.paymentIntent.id);
         return;
       }
 
       throw new Error("Payment did not complete successfully");
     } catch (error) {
-      console.error("Stripe checkout error:", error);
       onPaymentFailure(error instanceof Error ? error.message : "Payment failed");
     } finally {
       setIsProcessing(false);
@@ -95,27 +71,21 @@ function StripeCheckoutForm({
 
   return (
     <div className="mt-3 space-y-3">
-      <div className="border rounded p-3">
+      {/* Card input — keep white bg for Stripe iframe readability */}
+      <div className="rounded-xl border border-white/20 bg-white p-3">
         <CardElement
           options={{
             hidePostalCode: true,
             style: {
-              base: {
-                fontSize: "16px",
-                color: "#111827",
-                "::placeholder": {
-                  color: "#9CA3AF",
-                },
-              },
+              base: { fontSize: "15px", color: "#111827", "::placeholder": { color: "#9CA3AF" } },
             },
           }}
         />
       </div>
-
       <button
         onClick={handleStripePayment}
         disabled={isProcessing || !stripe || !elements}
-        className="w-full bg-orange-500 text-white p-3 rounded disabled:opacity-60"
+        className="w-full h-12 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold hover:brightness-110 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:scale-100 shadow-lg shadow-pink-500/25"
       >
         {isProcessing ? "Processing payment..." : "Pay Now"}
       </button>
@@ -136,62 +106,36 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
 
   const startCheckout = () => {
     setCheckoutError("");
-
-    if (authLoading) {
-      setCheckoutError('Please wait, your account is still loading.');
-      return;
-    }
-
-    if (!customerUser?.id || !customerUser?.email) {
-      setCheckoutError('Please login to continue checkout.');
-      return;
-    }
-
-    if (!stripePromise || !stripePublicKey) {
-      setCheckoutError("Stripe publishable key is missing. Please configure VITE_STRIPE_PUBLISHABLE_KEY.");
-      return;
-    }
-
-    if (amountInPaise <= 0) {
-      setCheckoutError("Cart total must be greater than zero.");
-      return;
-    }
-
+    if (authLoading) { setCheckoutError('Please wait, your account is still loading.'); return; }
+    if (!customerUser?.id || !customerUser?.email) { setCheckoutError('Please login to continue checkout.'); return; }
+    if (!stripePromise || !stripePublicKey) { setCheckoutError("Stripe publishable key is missing. Please configure VITE_STRIPE_PUBLISHABLE_KEY."); return; }
+    if (amountInPaise <= 0) { setCheckoutError("Cart total must be greater than zero."); return; }
     setShowStripeForm(true);
   };
 
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     try {
-      if (!customerUser?.id || !customerUser?.email) {
-        setCheckoutError('Please login to save your order.');
-        return;
-      }
-
-      const items = cart.map((item) => ({
-        productId: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        selectedSize: item.selectedSize || null,
-        selectedColor: item.selectedColor || null,
-      }));
-
-      if (items.length === 0) {
-        throw new Error('No cart items found to save order.');
-      }
+      if (!paymentIntentId || typeof paymentIntentId !== 'string') throw new Error('Invalid payment intent ID');
+      if (!customerUser?.id) { setCheckoutError('User ID is missing. Please login again.'); return; }
+      if (!customerUser?.email) { setCheckoutError('User email is missing.'); return; }
+      if (cart.length === 0) { setCheckoutError('Cart is empty.'); return; }
 
       const total = Number(cartTotal);
-      const payload = {
-        user_id: customerUser.id,
-        email: customerUser.email,
-        total_amount: total,
-        payment_id: paymentIntentId,
-        items,
-      };
+      if (!Number.isFinite(total) || total <= 0) { setCheckoutError('Invalid cart total.'); return; }
 
-      console.log('Saving order payload:', payload);
+      const items = cart.map((item) => ({
+        productId: item.id, name: item.name, quantity: item.quantity, price: item.price,
+        selectedSize: item.selectedSize || null, selectedColor: item.selectedColor || null,
+        selectedSleeve: item.selectedSleeve || null, selectedType: item.selectedType || null,
+        customDesign: item.customDesign || null,
+      }));
 
-      await api.orders.create(payload);
+      const result = await api.orders.create({
+        user_id: customerUser.id, email: customerUser.email,
+        total_amount: total, payment_id: paymentIntentId, items,
+      });
+
+      if (!result?.success) throw new Error(result?.error || result?.message || 'Unknown error saving order');
 
       setCheckoutSuccess(true);
       setCheckoutError("");
@@ -199,114 +143,153 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
       onClose();
       navigate('/payment-success');
     } catch (error) {
-      console.error('Order save after payment failed:', error);
       setCheckoutError(error instanceof Error ? error.message : 'Payment succeeded but order save failed');
     }
   };
 
-  const handlePaymentFailure = (message: string) => {
-    setCheckoutError(message);
-  };
+  const handlePaymentFailure = (message: string) => { setCheckoutError(message); };
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />}
+      {/* Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
 
+      {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full md:w-[400px] bg-white z-50 transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed top-0 right-0 h-full w-full md:w-[400px] z-50 transition-transform duration-300 flex flex-col
+          bg-white/10 backdrop-blur-xl border-l border-white/15 shadow-2xl
+          ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
-        <div className="flex flex-col h-full">
-          <div className="flex justify-between p-4 border-b">
-            <div className="flex items-center gap-2">
-              <ShoppingBag />
-              <h2>Cart ({cart.length})</h2>
-            </div>
-            <button onClick={onClose}>
-              <X />
-            </button>
+        {/* Header */}
+        <div className="flex justify-between items-center px-5 py-4 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <ShoppingBag size={20} className="text-pink-400" />
+            <h2 className="font-bold text-white">Cart ({cart.length})</h2>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/70 hover:text-white transition-all duration-200"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            {cart.length === 0 ? (
-              <div className="text-center text-gray-500">Your cart is empty</div>
-            ) : (
-              cart.map((item) => (
-                <div
-                  key={`${item.id}-${item.selectedSize}-${item.selectedColor}`}
-                  className="flex justify-between mb-4 border-b pb-2"
-                >
-                  <div>
-                    <p className="font-semibold">{item.name}</p>
-
-                    {item.selectedSize && <p className="text-xs text-gray-500">Size: {item.selectedSize}</p>}
-
-                    {item.selectedColor && <p className="text-xs text-gray-500">Color: {item.selectedColor}</p>}
-
-                    <div className="flex gap-2 mt-2 items-center">
-                      <button onClick={() => updateCartQuantity(item.id, item.quantity - 1)}>
-                        <Minus size={14} />
-                      </button>
-
-                      <span>{item.quantity}</span>
-
-                      <button onClick={() => updateCartQuantity(item.id, item.quantity + 1)}>
-                        <Plus size={14} />
-                      </button>
-                    </div>
+        {/* Items */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          {cart.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-white/40">
+              <ShoppingBag size={40} className="opacity-30" />
+              <p className="text-sm">Your cart is empty</p>
+            </div>
+          ) : (
+            cart.map((item) => (
+              <div
+                key={`${item.id}-${item.selectedSize}-${item.selectedColor}-${item.selectedSleeve}-${item.selectedType}`}
+                className="bg-white/10 border border-white/15 rounded-xl p-4 flex justify-between gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white text-sm truncate">{item.name}</p>
+                  <div className="mt-1 space-y-0.5">
+                    {item.selectedSize && <p className="text-xs text-white/45">Size: {item.selectedSize}</p>}
+                    {item.selectedColor && <p className="text-xs text-white/45">Color: {item.selectedColor}</p>}
+                    {item.selectedSleeve && <p className="text-xs text-white/45">Sleeve: {item.selectedSleeve}</p>}
+                    {item.selectedType && <p className="text-xs text-white/45">Type: {item.selectedType}</p>}
                   </div>
-
-                  <div className="text-right">
-                    <p>{`INR ${item.price * item.quantity}`}</p>
-
-                    <button onClick={() => removeFromCart(item.id)} className="text-red-500 mt-2">
-                      <Trash2 size={16} />
+                  {/* Qty controls */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
+                      className="w-7 h-7 rounded-lg bg-white/10 border border-white/15 text-white/70 hover:bg-white/20 flex items-center justify-center transition-all"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="text-sm font-bold text-white w-5 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                      className="w-7 h-7 rounded-lg bg-white/10 border border-white/15 text-white/70 hover:bg-white/20 flex items-center justify-center transition-all"
+                    >
+                      <Plus size={12} />
                     </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
 
-          {cart.length > 0 && (
-            <div className="p-4 border-t">
-              <p className="font-semibold">{`Total: INR ${cartTotal}`}</p>
-
-              {checkoutError && <p className="text-red-500 mt-2">{checkoutError}</p>}
-
-              {checkoutSuccess && (
-                <p className="text-green-600 flex items-center gap-2 mt-2">
-                  <CheckCircle size={16} /> Payment Successful
-                </p>
-              )}
-
-              {!showStripeForm ? (
-                <button onClick={startCheckout} className="w-full bg-orange-500 text-white p-3 mt-3 rounded">
-                  Checkout
-                </button>
-              ) : (
-                <div className="mt-3">
-                  {stripePromise ? (
-                    <Elements stripe={stripePromise}>
-                      <StripeCheckoutForm
-                        amountInPaise={amountInPaise}
-                        onPaymentSuccess={handlePaymentSuccess}
-                        onPaymentFailure={handlePaymentFailure}
-                      />
-                    </Elements>
-                  ) : (
-                    <p className="text-red-500">Stripe failed to initialize.</p>
-                  )}
+                <div className="flex flex-col items-end justify-between">
+                  <span className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+                    INR {item.price * item.quantity}
+                  </span>
+                  <button
+                    onClick={() => removeFromCart(item.id)}
+                    className="text-red-400 hover:text-red-300 transition-colors mt-2"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
-              )}
-
-              <Link to="/quote" onClick={onClose} className="block text-center mt-3 text-orange-500 underline">
-                Need custom quote?
-              </Link>
-            </div>
+              </div>
+            ))
           )}
         </div>
+
+        {/* Footer */}
+        {cart.length > 0 && (
+          <div className="px-5 py-4 border-t border-white/10 space-y-3">
+            {/* Total */}
+            <div className="flex justify-between items-center">
+              <span className="text-white/60 text-sm font-medium">Total</span>
+              <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+                INR {cartTotal}
+              </span>
+            </div>
+
+            {/* Error / Success */}
+            {checkoutError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/15 px-3 py-2 text-xs text-red-400">
+                {checkoutError}
+              </div>
+            )}
+            {checkoutSuccess && (
+              <div className="rounded-xl border border-green-500/30 bg-green-500/15 px-3 py-2 text-xs text-green-400 flex items-center gap-2">
+                <CheckCircle size={14} /> Payment Successful
+              </div>
+            )}
+
+            {/* Checkout / Stripe */}
+            {!showStripeForm ? (
+              <button
+                onClick={startCheckout}
+                className="w-full h-12 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold hover:brightness-110 hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-pink-500/25"
+              >
+                Checkout
+              </button>
+            ) : (
+              <div>
+                {stripePromise ? (
+                  <Elements stripe={stripePromise}>
+                    <StripeCheckoutForm
+                      amountInPaise={amountInPaise}
+                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentFailure={handlePaymentFailure}
+                    />
+                  </Elements>
+                ) : (
+                  <p className="text-red-400 text-sm">Stripe failed to initialize.</p>
+                )}
+              </div>
+            )}
+
+            <Link
+              to="/quote"
+              onClick={onClose}
+              className="block text-center text-sm text-pink-400 hover:text-pink-300 transition-colors"
+            >
+              Need a custom quote?
+            </Link>
+          </div>
+        )}
       </div>
     </>
   );

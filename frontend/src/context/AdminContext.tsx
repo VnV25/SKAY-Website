@@ -3,6 +3,18 @@ import { Product } from './ShopContext';
 import { products as initialProducts } from '../data/products';
 import { api } from '../api/api';
 
+// Products that must never appear anywhere in the UI.
+// Applied to both static data and any records fetched from the database.
+const HIDDEN_PRODUCT_NAMES = new Set([
+  'Custom Sticker Pack',
+  'Corporate Gift Kit',
+]);
+
+/** Returns true if the product should be shown. */
+function isVisible(product: { name?: string }): boolean {
+  return !HIDDEN_PRODUCT_NAMES.has(product.name ?? '');
+}
+
 export interface AnnouncementSettings {
   enabled: boolean;
   text: string;
@@ -102,6 +114,24 @@ function normalizeProductsPayload(payload: any): any[] {
   return [];
 }
 
+function applyProductImageOverrides(product: Product): Product {
+  const normalizedName = product.name.toLowerCase();
+
+  if (product.id === 'tshirt-oversized-1' || normalizedName === 'oversized t-shirt') {
+    return { ...product, image: '/assets/oversize.jpg' };
+  }
+
+  if (product.id === 'tshirt-normal-1' || normalizedName === 'regular fit t-shirt') {
+    return { ...product, image: '/assets/polo.jpg' };
+  }
+
+  if (product.id === 'hoodie-1' || normalizedName === 'zip-up hoodie with logo') {
+    return { ...product, image: '/assets/hoodie1.jpeg' };
+  }
+
+  return product;
+}
+
 function mapBackendProduct(item: any): Product {
   const imagesCandidate = item?.images && typeof item.images === 'object'
     ? Object.values(item.images as Record<string, string>)
@@ -109,7 +139,7 @@ function mapBackendProduct(item: any): Product {
 
   const category = typeof item?.category === 'string' ? item.category : 'apparel';
 
-  return {
+  return applyProductImageOverrides({
     id: String(item?._id || item?.id || `product-${Date.now()}`),
     name: item?.name || 'Untitled Product',
     category,
@@ -126,43 +156,44 @@ function mapBackendProduct(item: any): Product {
     trending: Boolean(item?.featured || item?.trending),
     discount: Number(item?.discount || 0),
     description: item?.description || '',
-  } as Product;
+  } as Product);
 }
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [testimonials, setTestimonials] = useState<Testimonial[]>(defaultTestimonials);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  // Apply visibility filter to static data at initialisation time
+  const [products, setProducts] = useState<Product[]>(initialProducts.filter(isVisible));
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('skay-admin-settings');
     const savedTestimonials = localStorage.getItem('skay-admin-testimonials');
-    const savedProducts = localStorage.getItem('skay-admin-products');
 
     if (savedSettings) setSettings(JSON.parse(savedSettings));
     if (savedTestimonials) setTestimonials(JSON.parse(savedTestimonials));
-    if (savedProducts) {
-      const parsed = JSON.parse(savedProducts);
-      if (Array.isArray(parsed)) setProducts(parsed);
-    }
 
     api.products
       .list()
       .then((data: any) => {
-        console.log('[AdminContext] products payload:', data);
         const backendProducts = normalizeProductsPayload(data);
 
         if (backendProducts.length > 0) {
-          setProducts(backendProducts.map(mapBackendProduct));
+          // Deduplicate by id, then strip hidden products
+          const seen = new Map<string, any>();
+          for (const p of backendProducts) {
+            const mapped = mapBackendProduct(p);
+            if (isVisible(mapped)) seen.set(mapped.id, mapped);
+          }
+          setProducts(Array.from(seen.values()));
           return;
         }
 
-        if (!savedProducts) {
-          setProducts(initialProducts);
-        }
+        // Backend returned nothing — fall back to filtered static data
+        setProducts(initialProducts.filter(isVisible));
       })
-      .catch((error) => {
-        console.error('[AdminContext] failed to load products:', error);
+      .catch(() => {
+        // Network error — fall back to filtered static data
+        setProducts(initialProducts.filter(isVisible));
       });
   }, []);
 
@@ -174,9 +205,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('skay-admin-testimonials', JSON.stringify(testimonials));
   }, [testimonials]);
 
-  useEffect(() => {
-    localStorage.setItem('skay-admin-products', JSON.stringify(products));
-  }, [products]);
+  // NOTE: products are intentionally NOT persisted to localStorage.
+  // They are always loaded fresh from the backend (or static data as fallback)
+  // to prevent stale/duplicate product data across sessions.
 
   const updateSettings = (newSettings: Partial<SiteSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));

@@ -1,9 +1,6 @@
 import { RouterProvider } from 'react-router-dom';
 import { router } from './routes.tsx';
-
-import { ShopProvider } from './context/ShopContext';
-import { AdminProvider } from './context/AdminContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 
 function AppContent() {
   const { loading } = useAuth();
@@ -20,15 +17,7 @@ function AppContent() {
 }
 
 function App() {
-  return (
-    <AdminProvider>
-      <AuthProvider>
-        <ShopProvider>
-          <AppContent />
-        </ShopProvider>
-      </AuthProvider>
-    </AdminProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;

@@ -1,154 +1,184 @@
+/**
+ * AdminLogin.tsx
+ *
+ * Uses supabase.auth.signInWithPassword() directly so the browser gets a
+ * real Supabase session. This makes auth.uid() non-null in RLS policies,
+ * which fixes all "permission denied" errors on admin write operations.
+ *
+ * After Supabase login we verify the user has role = 'admin' in the
+ * profiles table. If not, we sign them out immediately.
+ *
+ * Google login for customers is completely unchanged.
+ */
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Lock, User } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../api/api';
+import { supabase } from '../lib/supabase';
 
 export function AdminLogin() {
-const navigate = useNavigate();
-const { setAdminSession } = useAuth();
+  const navigate = useNavigate();
+  const { setAdminSession } = useAuth();
 
-const [credentials, setCredentials] = useState({
-username: '',
-password: '',
-});
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [error,   setError]   = useState('');
+  const [loading, setLoading] = useState(false);
 
-const [error, setError] = useState<string>('');
-const [loading, setLoading] = useState(false);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (loading) return;
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-e.preventDefault();
+    setLoading(true);
+    setError('');
 
+    try {
+      // ── Step 1: Sign in with Supabase directly ──────────────────────────
+      // This creates a real browser session so auth.uid() works in RLS.
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email:    credentials.username.trim().toLowerCase(),
+        password: credentials.password,
+      });
 
-if (loading) return; // 🔒 prevent double click
+      if (authError || !authData.session || !authData.user) {
+        throw new Error(authError?.message || 'Invalid credentials');
+      }
 
-setLoading(true);
-setError('');
+      // ── Step 2: Verify admin role in profiles table ─────────────────────
+      // We use the session that was just created — auth.uid() is now valid.
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role')
+        .eq('id', authData.user.id)
+        .single();
 
-try {
-  console.log("Sending to backend:", {
-    email: credentials.username,
-    password: credentials.password,
-  });
+      if (profileError || !profile) {
+        // Sign out so we don't leave a dangling session
+        await supabase.auth.signOut();
+        throw new Error('Admin profile not found. Contact support.');
+      }
 
-  const data = await api.auth.adminLogin({
-    email: credentials.username,
-    password: credentials.password,
-  });
+      if (profile.role !== 'admin') {
+        await supabase.auth.signOut();
+        throw new Error('Access denied. This account does not have admin privileges.');
+      }
 
-  console.log("Admin login response:", data);
+      // ── Step 3: Store session for checkAdminAuth guard ──────────────────
+      // We store the Supabase access_token as skay-admin-token so the
+      // existing checkAdminAuth() helper can verify it client-side.
+      const accessToken = authData.session.access_token;
+      localStorage.setItem('skay-admin-token', accessToken);
+      localStorage.setItem('isAdminLoggedIn', 'true');
 
-  if (!data?.token) {
-    throw new Error('Invalid admin credentials');
-  }
+      // ── Step 4: Update AuthContext ──────────────────────────────────────
+      setAdminSession(
+        {
+          id:    profile.id,
+          email: profile.email,
+          name:  profile.full_name || profile.email,
+          role:  profile.role,
+        },
+        accessToken,
+      );
 
-  // ✅ FIX 1: SAVE TOKEN
-  localStorage.setItem('skay-admin-token', data.token);
+      navigate('/admin/dashboard');
+    } catch (err: any) {
+      const msg = err?.message || 'Login failed';
+      setError(msg);
+      // Auto-clear after 4 s so the form doesn't stay red forever
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // ✅ FIX 2: SAVE LOGIN FLAG (VERY IMPORTANT)
-  localStorage.setItem('isAdminLoggedIn', 'true');
+  const inputClass =
+    'w-full h-12 rounded-xl border border-white/20 bg-white/10 pl-11 pr-4 text-sm text-white placeholder:text-white/40 outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all duration-200';
 
-  // ✅ FIX 3: CONTEXT (if you use it elsewhere)
-  setAdminSession(data.admin, data.token);
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950">
+      <Header mode="admin" />
 
-  // ✅ REDIRECT
-  navigate('/admin/dashboard');
+      <section className="min-h-[calc(100vh-180px)] flex items-center justify-center px-4 py-16">
+        <div className="w-full max-w-md">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-8 md:p-10">
 
-} catch (err: any) {
-  console.error("Admin login error:", err.message);
+            {/* Icon + Title */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/25 mb-4">
+                <Lock size={28} className="text-pink-400" />
+              </div>
+              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+                Admin Login
+              </h1>
+              <p className="text-white/50 text-sm mt-1">Access the admin dashboard</p>
+            </div>
 
-  setError(err.message || 'Login failed');
+            <form onSubmit={handleSubmit} className="space-y-4">
 
-  setTimeout(() => setError(''), 3000);
-} finally {
-  setLoading(false);
-}
+              {/* Email */}
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-white/70 mb-1.5">
+                  Email
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/35" size={17} />
+                  <input
+                    type="email"
+                    id="username"
+                    value={credentials.username}
+                    onChange={e => setCredentials({ ...credentials, username: e.target.value })}
+                    className={inputClass}
+                    placeholder="Enter admin email"
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
 
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-white/70 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/35" size={17} />
+                  <input
+                    type="password"
+                    id="password"
+                    value={credentials.password}
+                    onChange={e => setCredentials({ ...credentials, password: e.target.value })}
+                    className={inputClass}
+                    placeholder="Enter password"
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+              </div>
 
-};
+              {/* Error */}
+              {error && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
 
-return ( <div className="min-h-screen bg-white"> <Header mode="admin" />
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold hover:brightness-110 hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:scale-100 shadow-lg shadow-pink-500/25 mt-2"
+              >
+                {loading ? 'Logging in…' : 'Login'}
+              </button>
 
-
-  <section className="py-16 md:py-24 min-h-[60vh] flex items-center">
-    <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 w-full">
-      <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-200">
-
-        <div className="text-center mb-8">
-          <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="text-orange-500" size={32} />
+            </form>
           </div>
-          <h1 className="text-3xl mb-2">Admin Login</h1>
-          <p className="text-gray-600">Access the admin dashboard</p>
         </div>
+      </section>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-
-          <div>
-            <label htmlFor="username" className="block text-sm mb-2">
-              Email
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="email"
-                id="username"
-                value={credentials.username}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, username: e.target.value })
-                }
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Enter admin email"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="password"
-                id="password"
-                value={credentials.password}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Enter password"
-                required
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 text-white py-3 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-
-        </form>
-
-      </div>
+      <Footer />
     </div>
-  </section>
-
-  <Footer />
-</div>
-
-
-);
+  );
 }

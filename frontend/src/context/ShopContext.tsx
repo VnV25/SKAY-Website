@@ -5,19 +5,29 @@ export interface Product {
   name: string;
   category: string;
   price: number;
+  originalPrice?: number;
   image: string;
   rating: number;
   reviews: number;
   stock: number;
   sizes?: string[];
   colors?: string[];
+  trending?: boolean;
+  discount?: number;
   description: string;
+  variants?: {
+    sleeves?: string[];
+    types?: string[];
+  };
 }
 
 export interface CartItem extends Product {
   quantity: number;
   selectedSize?: string;
   selectedColor?: string;
+  selectedSleeve?: string;
+  selectedType?: string;
+  selectedNeck?: string;
   customDesign?: string;
 }
 
@@ -25,7 +35,16 @@ interface ShopContextType {
   cart: CartItem[];
   wishlist: Product[];
   recentlyViewed: Product[];
-  addToCart: (product: Product, quantity?: number, size?: string, color?: string) => void;
+  addToCart: (
+    product: Product,
+    quantity?: number,
+    size?: string,
+    color?: string,
+    customDesign?: string,
+    sleeve?: string,
+    type?: string,
+    neck?: string
+  ) => void;
   removeFromCart: (productId: string) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -47,19 +66,53 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const addToCart = (product: Product, quantity = 1, size?: string, color?: string) => {
+  const addToCart = (
+    product: Product,
+    quantity = 1,
+    size?: string,
+    color?: string,
+    customDesign?: string,
+    sleeve?: string,
+    type?: string,
+    neck?: string
+  ) => {
     setCart((prev) => {
       const existing = prev.find(
-        (i) => i.id === product.id && i.selectedSize === size && i.selectedColor === color
+        (i) =>
+          i.id === product.id &&
+          i.selectedSize === size &&
+          i.selectedColor === color &&
+          i.selectedSleeve === sleeve &&
+          i.selectedType === type &&
+          i.selectedNeck === neck
       );
 
       if (existing) {
         return prev.map((i) =>
-          i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
+          i.id === product.id &&
+          i.selectedSize === size &&
+          i.selectedColor === color &&
+          i.selectedSleeve === sleeve &&
+          i.selectedType === type &&
+          i.selectedNeck === neck
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
         );
       }
 
-      return [...prev, { ...product, quantity, selectedSize: size, selectedColor: color }];
+      return [
+        ...prev,
+        {
+          ...product,
+          quantity,
+          selectedSize: size,
+          selectedColor: color,
+          selectedSleeve: sleeve,
+          selectedType: type,
+          selectedNeck: neck,
+          customDesign,
+        },
+      ];
     });
   };
 
