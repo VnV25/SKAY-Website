@@ -18,7 +18,7 @@ interface ServiceProductCardProps {
 export function ServiceProductCard({ service, categoryName, categoryIcon, onQuickView }: ServiceProductCardProps) {
   const { addToCart, addToWishlist, removeFromWishlist, wishlist } = useShop();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
 
   const isInWishlist = wishlist.some(item => item.id === `service-${service.name}`);
 
@@ -42,7 +42,7 @@ export function ServiceProductCard({ service, categoryName, categoryIcon, onQuic
 
   const handleAddToCart = () => {
     setIsAddingToCart(true);
-    addToCart(serviceAsProduct, quantity);
+    addToCart(serviceAsProduct, Math.max(1, quantity));
     setTimeout(() => setIsAddingToCart(false), 1500);
   };
 
@@ -173,8 +173,8 @@ export function ServiceProductCard({ service, categoryName, categoryIcon, onQuic
           <span className="text-xs font-semibold text-white/55">Qty</span>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setQuantity(q => Math.max(1, q - 1))}
-              disabled={quantity <= 1}
+              onClick={() => setQuantity(q => Math.max(0, q - 1))}
+              disabled={quantity <= 0}
               className="w-7 h-7 rounded-lg bg-white/10 border border-white/15 text-white/70 hover:bg-white/20 flex items-center justify-center disabled:opacity-30 transition-all"
               aria-label="Decrease quantity"
             >

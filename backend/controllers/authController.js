@@ -61,6 +61,24 @@ const registerCustomer = async (req, res) => {
       return res.status(500).json({ message: 'Registration completed without a valid user record' });
     }
 
+    // Supabase silently returns a user with an empty identities array when the
+    // email is already registered (instead of returning an error). Detect this
+    // and return a clear 400 so the frontend can show "email already in use".
+    if (Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+      return res.status(400).json({ message: 'An account with this email already exists. Please log in.' });
+    }
+
+    // Auto-confirm the email using the service-role admin API so the user
+    // can log in immediately after registration without email verification.
+    try {
+      await supabase.auth.admin.updateUser(authData.user.id, {
+        email_confirm: true,
+      });
+    } catch (confirmErr) {
+      // Non-fatal — log but continue. The user may need to confirm via email.
+      console.warn('[Auth] registerCustomer: email auto-confirm failed:', confirmErr?.message);
+    }
+
     await supabase.from('profiles').upsert([
       {
         id:        authData.user.id,
@@ -85,7 +103,7 @@ const registerCustomer = async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(err.status || 500).json({ message: err.message || 'Server error' });
   }
 };
 
@@ -104,43 +122,80 @@ const loginCustomer = async (req, res) => {
       password,
     });
 
-    if (error || !data?.user) {
+    if (error) {
+      // If email is not confirmed, attempt to auto-confirm via admin API and retry
+      if (error.message?.toLowerCase().includes('email not confirmed')) {
+        try {
+          // Find the user by email using admin API
+          const { data: listData } = await supabase.auth.admin.listUsers();
+          const existingUser = listData?.users?.find(
+            (u) => u.email?.toLowerCase() === email.toLowerCase()
+          );
+          if (existingUser?.id) {
+            await supabase.auth.admin.updateUser(existingUser.id, { email_confirm: true });
+            // Retry sign-in after confirming
+            const { data: retryData, error: retryError } = await supabaseAuth.auth.signInWithPassword({
+              email: email.toLowerCase(),
+              password,
+            });
+            if (!retryError && retryData?.user) {
+              // Success on retry — continue with retryData
+              return await _finishLogin(retryData, res);
+            }
+          }
+        } catch (autoConfirmErr) {
+          console.warn('[Auth] loginCustomer: auto-confirm retry failed:', autoConfirmErr?.message);
+        }
+        return res.status(401).json({
+          message: 'Please verify your email before logging in, or contact support.',
+        });
+      }
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    await supabase.rpc('increment_login_count', { user_id: data.user.id }).catch(() => {});
+    if (!data?.user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
-    await supabase
-      .from('profiles')
-      .upsert({
-        id:        data.user.id,
-        email:     data.user.email,
-        full_name: data.user.user_metadata?.full_name || data.user.email,
-        role:      'customer',
-      });
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .single();
-
-    const token = safeCreateToken(data.user, 'customer');
-
-    return res.json({
-      success: true,
-      token,
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        name: profile?.full_name || data.user.email,
-      },
-    });
+    return await _finishLogin(data, res);
   } catch (err) {
     console.error('Login error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(err.status || 500).json({ message: err.message || 'Server error' });
   }
 };
+
+async function _finishLogin(data, res) {
+  // Use await + destructuring — supabase-js v2 returns a PromiseLike builder,
+  // not a native Promise, so .catch() is not available on it directly.
+  await supabase.rpc('increment_login_count', { user_id: data.user.id });
+
+  await supabase
+    .from('profiles')
+    .upsert({
+      id:        data.user.id,
+      email:     data.user.email,
+      full_name: data.user.user_metadata?.full_name || data.user.email,
+      role:      'customer',
+    });
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
+
+  const token = safeCreateToken(data.user, 'customer');
+
+  return res.json({
+    success: true,
+    token,
+    user: {
+      id: data.user.id,
+      email: data.user.email,
+      name: profile?.full_name || data.user.email,
+    },
+  });
+}
 
 const googleLogin = async (req, res) => {
   try {

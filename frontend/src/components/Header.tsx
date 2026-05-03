@@ -12,7 +12,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import logo from 'figma:asset/7edebb097f2f6ca20f6c3623a0fbff43e7eeef09.png';
 import { useShop } from '../context/ShopContext';
 import { useAdmin } from '../context/AdminContext';
 import { useAuth } from '../context/AuthContext';
@@ -67,12 +66,18 @@ export function Header({ mode = 'public' }: HeaderProps) {
     }
 
     if (adminUser) {
+      // Clear admin session synchronously first, then sign out of Supabase
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('skay-admin-token');
+      localStorage.removeItem('isAdminLoggedIn');
       clearAdminSession();
     }
 
     setProfileMenuOpen(false);
     setMobileMenuOpen(false);
-    window.location.href = isAdminMode ? '/admin' : '/';
+
+    // Use replace to avoid back-button issues after logout
+    window.location.replace(isAdminMode ? '/admin' : '/');
   };
 
   const navLinkClass =
@@ -88,13 +93,18 @@ export function Header({ mode = 'public' }: HeaderProps) {
 
             {/* Logo */}
             <Link to={isAdminMode ? '/admin/dashboard' : '/'} className="flex items-center gap-2.5 group">
-              <img src={logo} alt="SKAY Printing" className="h-10 w-10 object-contain" />
-              <div>
-                <div className="font-bold text-base text-white group-hover:text-white/90 transition-colors">
-                  SKAY Printing
-                </div>
-                {isAdminMode && <div className="text-xs text-white/50">Admin panel</div>}
+              <div className="flex items-center">
+                <span
+                  className="font-black tracking-[0.18em] text-2xl leading-none select-none"
+                  style={{ fontFamily: "'Montserrat', 'Inter', sans-serif" }}
+                >
+                  <span style={{ color: '#ffffff' }}>S</span>
+                  <span style={{ color: '#f97316' }}>K</span>
+                  <span style={{ color: '#ffffff' }}>A</span>
+                  <span style={{ color: '#ffffff' }}>Y</span>
+                </span>
               </div>
+              {isAdminMode && <div className="text-xs text-white/50 ml-1">Admin panel</div>}
             </Link>
 
             {/* Public Nav */}

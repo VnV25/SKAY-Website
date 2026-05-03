@@ -68,7 +68,7 @@ function VariantCard({
 export function ServiceModal({ service, categoryName, categoryIcon, isOpen, onClose }: ServiceModalProps) {
   const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useShop();
 
-  const [quantity,       setQuantity]       = useState(1);
+  const [quantity,       setQuantity]       = useState(0);
   const [selectedSize,   setSelectedSize]   = useState('');
   const [selectedColor,  setSelectedColor]  = useState('');
   const [selectedNeck,   setSelectedNeck]   = useState('');
@@ -98,7 +98,7 @@ export function ServiceModal({ service, categoryName, categoryIcon, isOpen, onCl
 
   useEffect(() => {
     if (!service || !isOpen) return;
-    setQuantity(1);
+    setQuantity(0);
     setSelectedSize('');
     setSelectedColor('');
     setSelectedNeck('');
@@ -155,7 +155,7 @@ export function ServiceModal({ service, categoryName, categoryIcon, isOpen, onCl
 
   const handleAddToCart = () => {
     if (!canAddToCart()) return;
-    addToCart(serviceAsProduct, quantity, selectedSize, selectedColor, customDesign, selectedSleeve, selectedType, selectedNeck);
+    addToCart(serviceAsProduct, Math.max(1, quantity), selectedSize, selectedColor, customDesign, selectedSleeve, selectedType, selectedNeck);
     onClose();
   };
 
@@ -415,7 +415,7 @@ export function ServiceModal({ service, categoryName, categoryIcon, isOpen, onCl
             <div>
               <label className="block text-xs font-semibold mb-2 text-white/70">Quantity</label>
               <div className="flex items-center gap-3">
-                <button onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                <button onClick={() => setQuantity(q => Math.max(0, q - 1))}
                   className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 transition-all flex items-center justify-center font-bold">
                   −
                 </button>

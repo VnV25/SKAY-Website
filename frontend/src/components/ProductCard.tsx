@@ -13,21 +13,21 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
   const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useShop();
   const { settings } = useAdmin();
   const [justAdded, setJustAdded] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
   const inWishlist = isInWishlist(product.id);
 
   const handleAddToCart = () => {
     if (onQuickView) {
       onQuickView(product);
     } else {
-      addToCart(product, quantity);
+      addToCart(product, Math.max(1, quantity));
       setJustAdded(true);
       setTimeout(() => setJustAdded(false), 2000);
     }
   };
 
   const decreaseQuantity = () => {
-    setQuantity((current) => Math.max(1, current - 1));
+    setQuantity((current) => Math.max(0, current - 1));
   };
 
   const increaseQuantity = () => {
@@ -161,7 +161,7 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
             <button
               type="button"
               onClick={decreaseQuantity}
-              disabled={quantity <= 1}
+              disabled={quantity <= 0}
               className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 border border-white/15 text-white/70 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30 transition-all duration-200"
               aria-label={`Decrease ${product.name} quantity`}
             >

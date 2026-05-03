@@ -52,7 +52,7 @@ export const galleryItems: GalleryItem[] = [
   {
     id: 6,
     category: 'mugs',
-    image: '/assets/promotion.jpg',
+    image: '/assets/promotion.jpeg',
     title: 'Personalized Merchandise',
     description: 'Custom designed promotional items',
   },
@@ -81,13 +81,6 @@ export const galleryItems: GalleryItem[] = [
   },
 
   // Corporate
-  {
-    id: 10,
-    category: 'corporate',
-    image: '/assets/corporate.jpg',
-    title: 'Corporate Gift Set',
-    description: 'Executive gifting kit for client appreciation',
-  },
   {
     id: 11,
     category: 'corporate',

@@ -93,7 +93,7 @@ export function ProductModal({ product, isOpen, onClose, onSelectProduct }: Prod
   const [selectedSleeve, setSelectedSleeve] = useState('');
   const [selectedType,   setSelectedType]   = useState('');
   const [selectedNeck,   setSelectedNeck]   = useState('');
-  const [quantity,       setQuantity]       = useState(1);
+  const [quantity,       setQuantity]       = useState(0);
   const [customDesign,   setCustomDesign]   = useState('');
   const [designPreview,  setDesignPreview]  = useState('');
 
@@ -105,7 +105,7 @@ export function ProductModal({ product, isOpen, onClose, onSelectProduct }: Prod
     setSelectedSleeve('');
     setSelectedType('');
     setSelectedNeck('');
-    setQuantity(1);
+    setQuantity(0);
     setCustomDesign('');
     setDesignPreview('');
   }, [product?.id, isOpen]);
@@ -212,7 +212,7 @@ export function ProductModal({ product, isOpen, onClose, onSelectProduct }: Prod
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedSize, selectedColor, customDesign, selectedSleeve, selectedType, selectedNeck);
+    addToCart(product, Math.max(1, quantity), selectedSize, selectedColor, customDesign, selectedSleeve, selectedType, selectedNeck);
     addToRecentlyViewed(product);
     onClose();
   };
@@ -485,7 +485,7 @@ export function ProductModal({ product, isOpen, onClose, onSelectProduct }: Prod
               <div>
                 <label className="block text-sm font-semibold mb-2.5 text-white/70">Quantity</label>
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  <button onClick={() => setQuantity(Math.max(0, quantity - 1))}
                     className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 transition-all duration-200 flex items-center justify-center font-bold text-lg">
                     −
                   </button>
