@@ -46,11 +46,15 @@ const localhostPattern = /^http:\/\/(127\.0\.0\.1|localhost):\d+$/;
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Dynamic origin to allow all domains (like Vercel) while keeping credentials to true
-      callback(null, origin || true);
-    },
+    origin: [
+      'https://www.theskay.co.in',
+      'https://theskay.co.in',
+      'https://skay-website-ohmm.vercel.app',
+      ...defaultOrigins
+    ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   })
 );
 
