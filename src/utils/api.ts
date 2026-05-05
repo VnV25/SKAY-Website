@@ -2,8 +2,17 @@
  * API utility for making authenticated requests to the backend.
  */
 
-const DEFAULT_API_BASE_URL = 'http://localhost:5000/api';
-const API_BASE_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
+const LOCAL_API_BASE_URL = 'http://localhost:5000/api';
+const PRODUCTION_API_BASE_URL = 'https://skay-website-1.onrender.com/api';
+
+const DEFAULT_API_BASE_URL =
+  window.location.hostname === 'localhost'
+    ? LOCAL_API_BASE_URL
+    : PRODUCTION_API_BASE_URL;
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL
+).replace(/\/+$/, '');
 
 export interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
   body?: BodyInit | Record<string, unknown> | null;
@@ -17,23 +26,14 @@ export interface AdminUser {
   role?: string;
 }
 
-/**
- * Check if user is authenticated.
- */
 export function isAdminAuthenticated(): boolean {
   return !!sessionStorage.getItem('adminToken');
 }
 
-/**
- * Get the admin token.
- */
 export function getAdminToken(): string | null {
   return sessionStorage.getItem('adminToken');
 }
 
-/**
- * Get the logged-in admin user data.
- */
 export function getAdminUser(): AdminUser | null {
   const userStr = sessionStorage.getItem('adminUser');
   if (!userStr) return null;
@@ -46,18 +46,12 @@ export function getAdminUser(): AdminUser | null {
   }
 }
 
-/**
- * Logout and clear authentication.
- */
 export function logout(): void {
   sessionStorage.removeItem('adminToken');
   sessionStorage.removeItem('adminUser');
   localStorage.removeItem('isAdminLoggedIn');
 }
 
-/**
- * Make an authenticated API request.
- */
 export async function apiRequest<T = unknown>(
   endpoint: string,
   options: ApiRequestOptions = {},
@@ -82,6 +76,7 @@ export async function apiRequest<T = unknown>(
   const requestConfig: RequestInit = {
     ...options,
     headers,
+    credentials: 'include',
   };
 
   if (
@@ -109,7 +104,9 @@ export async function apiRequest<T = unknown>(
   const data = responseText ? safeJsonParse(responseText) : null;
 
   if (!response.ok) {
-    const message = isApiErrorResponse(data) ? data.message : `API Error: ${response.statusText}`;
+    const message = isApiErrorResponse(data)
+      ? data.message
+      : `API Error: ${response.statusText}`;
     throw new Error(message);
   }
 
@@ -128,16 +125,13 @@ function isApiErrorResponse(value: unknown): value is { message?: string } {
   return typeof value === 'object' && value !== null && 'message' in value;
 }
 
-/**
- * GET request.
- */
-export function apiGet<T = unknown>(endpoint: string, options?: ApiRequestOptions): Promise<T> {
+export function apiGet<T = unknown>(
+  endpoint: string,
+  options?: ApiRequestOptions,
+): Promise<T> {
   return apiRequest<T>(endpoint, { ...options, method: 'GET' });
 }
 
-/**
- * POST request.
- */
 export function apiPost<T = unknown>(
   endpoint: string,
   body?: ApiRequestOptions['body'],
@@ -146,9 +140,6 @@ export function apiPost<T = unknown>(
   return apiRequest<T>(endpoint, { ...options, method: 'POST', body });
 }
 
-/**
- * PUT request.
- */
 export function apiPut<T = unknown>(
   endpoint: string,
   body?: ApiRequestOptions['body'],
@@ -157,9 +148,9 @@ export function apiPut<T = unknown>(
   return apiRequest<T>(endpoint, { ...options, method: 'PUT', body });
 }
 
-/**
- * DELETE request.
- */
-export function apiDelete<T = unknown>(endpoint: string, options?: ApiRequestOptions): Promise<T> {
+export function apiDelete<T = unknown>(
+  endpoint: string,
+  options?: ApiRequestOptions,
+): Promise<T> {
   return apiRequest<T>(endpoint, { ...options, method: 'DELETE' });
 }
