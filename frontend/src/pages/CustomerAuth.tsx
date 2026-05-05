@@ -75,7 +75,7 @@ export function CustomerAuth() {
       setError("");
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/` },
+        options: { redirectTo: `${import.meta.env.VITE_APP_URL ?? window.location.origin}/` },
       });
       if (oauthError) throw oauthError;
     } catch (err) {
